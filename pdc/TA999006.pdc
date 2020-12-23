@@ -1,0 +1,34 @@
+---------------------------------------------------------------------------------------------------------
+---TRP_MX_DL Plantilla pdc Tabla (v1.2)                                                               ---
+---------------------------------------------------------------------------------------------------------
+---Nombre de la Tabla:	  TA999006
+---Propietario/Cedente:	  TRP_MX_DL
+---Beneficiarios:	  TRON2000
+---Sinónimos en:	  TRON2000
+---Nombre del Sinónimo:	  TA999006
+---Variables a sustituir: l_tabla, l_propietario
+---Fecha realización:	  05-11-2020 10:48:00
+---Realizado por:	  MINSAIT
+---Comentario: 		  Los valores de las variables l_tabla y l_propietario deberán sustituirse
+---------------------------------------------------------------------------------------------------------
+DECLARE
+   --
+   -- Por favor, sustituya los valores de las variables l_tabla y l_propietario por sus correspondientes.
+   --
+   l_tabla		VARCHAR2(30) := 'TA999006';
+   l_propietario	VARCHAR2(30) := 'TRP_MX_DL';
+   --
+   l_tron2000		VARCHAR2(30) := 'TRON2000';
+   --
+   --
+   -- Se otorga privilegio sobre la tabla del esquema propietario (l_propietario) a TRON2000
+   l_grant_TRON2000    VARCHAR2 (1000) := 'GRANT SELECT ON '||l_propietario||'.'||l_tabla||' TO '||l_tron2000;
+
+   -- Se crea un sinónimo en TRON2000 con el mismo nombre de la tabla
+   l_synonym_TRON2000  VARCHAR2 (1000) := 'CREATE OR REPLACE SYNONYM '||l_tron2000||'.'||l_tabla||' FOR '||l_propietario||'.'||l_tabla;
+   --
+BEGIN
+   EXECUTE IMMEDIATE l_grant_TRON2000;
+   EXECUTE IMMEDIATE l_synonym_TRON2000;
+END;
+/

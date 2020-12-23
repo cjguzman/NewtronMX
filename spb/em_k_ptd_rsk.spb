@@ -1,0 +1,332 @@
+CREATE OR REPLACE PACKAGE BODY tron2000.em_k_ptd_rsk AS
+ --
+ /* -------------------- VERSION = 1.01 -------------------- */
+ --
+ /* -------------------- MODIFICACIONES --------------------
+ || 2020/10/18 - hsolive - 1.01
+ ||
+ || Se añaden los métodos f_dev_dias_efec_poliza y f_dev_dias_efec_poliza_ant
+ || para disponer de los días del movimiento actual y anterior en el caso
+ || de necesitarlos para calcular el coeficiente de anulación
+ */ --------------------------------------------------------
+ --
+ /* --------------------------------------------------
+ || Aqui comienza la declaracion de variables GLOBALES
+ */ --------------------------------------------------
+ --
+ --
+ /* ---------------------------------------------------
+ || Aqui comienza la declaracion de constantes GLOBALES
+ */ ---------------------------------------------------
+ --
+ g_k_fmt_f CONSTANT VARCHAR2(8) := 'ddmmyyyy';
+ --
+ /* ----------------------------------------------------
+ || Aqui comienza la declaracion de subprogramas LOCALES
+ */ ----------------------------------------------------
+ --
+ --
+ /* -----------------------------------------------------
+ || pp_asigna:
+ ||
+ || Llama a trn_k_global.asigna
+ */ -----------------------------------------------------
+ --
+ PROCEDURE pp_asigna(p_nom_global VARCHAR2,
+                     p_val_global VARCHAR2)
+ IS
+ BEGIN
+    --
+    trn_k_global.asigna(p_nom_global,p_val_global);
+    --
+ END pp_asigna;
+ --
+ --
+ /* -----------------------------------------------------
+ || pp_asigna:
+ ||
+ || Llama a trn_k_global.asigna
+ */ -----------------------------------------------------
+ --
+ PROCEDURE pp_asigna(p_nom_global VARCHAR2,
+                     p_val_global NUMBER  ) 
+ IS
+ BEGIN
+    --
+    trn_k_global.asigna(p_nom_global,TO_CHAR(p_val_global));
+    --
+ END pp_asigna;
+ --
+ --
+ /* -----------------------------------------------------
+ || pp_asigna:
+ ||
+ || Llama a trn_k_global.asigna
+ */ -----------------------------------------------------
+ --
+ PROCEDURE pp_asigna(p_nom_global VARCHAR2,
+                     p_val_global DATE    )
+ IS
+ BEGIN
+    --
+    trn_k_global.asigna(p_nom_global,TO_CHAR(p_val_global,g_k_fmt_f));
+    --
+ END pp_asigna;
+ --
+ --
+ /* -----------------------------------------------------
+ || fp_devuelve_c:
+ ||
+ || Llama a trn_k_global.devuelve y retorna como VARCHAR2
+ */ -----------------------------------------------------
+ --
+ FUNCTION fp_devuelve_c(p_nom_global VARCHAR2)
+          RETURN VARCHAR2 IS
+ BEGIN
+    --
+    RETURN trn_k_global.devuelve(p_nom_global);
+    --
+ END fp_devuelve_c;
+ --
+ --
+ /* -----------------------------------------------------
+ || fp_devuelve_n:
+ ||
+ || Llama a trn_k_global.devuelve y retorna como NUMBER
+ */ -----------------------------------------------------
+ --
+ FUNCTION fp_devuelve_n(p_nom_global VARCHAR2)
+          RETURN NUMBER IS
+ BEGIN
+    --
+    RETURN TO_NUMBER(trn_k_global.devuelve(p_nom_global));
+    --
+ END fp_devuelve_n;
+ --
+ --
+ /* -----------------------------------------------------
+ || fp_devuelve_f:
+ ||
+ || Llama a trn_k_global.devuelve y retorna como DATE
+ */ -----------------------------------------------------
+ --
+ FUNCTION fp_devuelve_f(p_nom_global VARCHAR2)
+          RETURN DATE IS
+ BEGIN
+    --
+    RETURN TO_DATE(trn_k_global.devuelve(p_nom_global),g_k_fmt_f);
+    --
+ END fp_devuelve_f;
+ --
+ --
+ /* --------------------------------------------------------
+ || Aqui comienza la declaracion de subprogramas del PACKAGE
+ */ --------------------------------------------------------
+ --
+ --
+ /* -----------------------------------------------------
+ || f_dev_num_riesgo:
+ ||
+ || Devuelve el número de riesgo
+ */ -----------------------------------------------------
+ --
+ FUNCTION f_dev_num_riesgo
+          RETURN x2000280.num_riesgo%TYPE IS
+ BEGIN
+    --
+    RETURN fp_devuelve_c('num_riesgo');
+    --
+ END f_dev_num_riesgo;
+ --
+ --
+ /* -----------------------------------------------------
+ || f_dev_num_periodo:
+ ||
+ || Devuelve el número de periodo
+ */ -----------------------------------------------------
+ --
+ FUNCTION f_dev_num_periodo
+          RETURN x2000040.num_periodo%TYPE IS
+ BEGIN
+    --
+    RETURN fp_devuelve_c('num_periodo');
+    --
+ END f_dev_num_periodo;
+ --
+ --
+ /* -----------------------------------------------------
+ || f_dev_num_periodo_base:
+ ||
+ || Devuelve el número de periodo de partida para
+ || cálculos
+ */ -----------------------------------------------------
+ --
+ FUNCTION f_dev_num_periodo_base
+          RETURN x2000040.num_periodo%TYPE IS
+ BEGIN
+    --
+    RETURN fp_devuelve_c('num_periodo_base');
+    --
+ END f_dev_num_periodo_base;
+ --
+ --
+ /* -----------------------------------------------------
+ || f_dev_cod_modalidad:
+ ||
+ || Devuelve la modalidad de vida
+ */ -----------------------------------------------------
+ --
+ FUNCTION f_dev_cod_modalidad
+          RETURN x2000280.cod_modalidad%TYPE IS
+ BEGIN
+    --
+    RETURN fp_devuelve_c('cod_modalidad');
+    --
+ END f_dev_cod_modalidad;
+ --
+ --
+ /* -----------------------------------------------------
+ || f_dev_cod_sub_ramo:
+ ||
+ || Devuelve el codigo subramo
+ */ -----------------------------------------------------
+ --
+ FUNCTION f_dev_cod_sub_ramo
+          RETURN x2000280.cod_modalidad%TYPE IS
+ BEGIN
+    --
+    RETURN fp_devuelve_c('cod_sub_ramo');
+    --
+ END f_dev_cod_sub_ramo;
+ --
+ --
+ /* -----------------------------------------------------
+ || f_dev_coef_anul
+ ||
+ || Devuelve el coeficiente de anulacion
+ */ -----------------------------------------------------
+ --
+ FUNCTION f_dev_coef_anul        
+          RETURN x2000290.coef_anulacion%TYPE IS   
+ BEGIN
+    --
+    RETURN fp_devuelve_n('coef_anul');
+    --
+ END f_dev_coef_anul; 
+ --
+ --
+ /* -----------------------------------------------------
+ || f_dev_coef_cob:
+ ||
+ || Devuelve el coeficiente de la cobertura
+ */ -----------------------------------------------------
+ --
+ FUNCTION f_dev_coef_cob         
+          RETURN x2000290.coef_cob%TYPE IS         
+ BEGIN
+    --
+    RETURN fp_devuelve_n('coef_cob');
+    --
+ END f_dev_coef_cob;
+ --
+ --
+ /* -----------------------------------------------------
+ || f_dev_dias_efec_poliza:
+ ||
+ || Devuelve los dias de efecto de la poliza
+ */ -----------------------------------------------------
+ --
+ FUNCTION f_dev_dias_efec_poliza 
+          RETURN a2000241.dia_escala%TYPE IS
+ BEGIN
+    --
+    RETURN fp_devuelve_n('dias_efec_poliza');
+    --
+ END f_dev_dias_efec_poliza;
+ --
+ --
+ /* -----------------------------------------------------
+ || f_dev_dias_efec_poliza_ant:
+ ||
+ || Devuelve los dias de efecto de la poliza en su movimiento anterior
+ */ -----------------------------------------------------
+ --
+ FUNCTION f_dev_dias_efec_poliza_ant 
+          RETURN a2000241.dia_escala%TYPE IS
+ BEGIN
+    --
+    RETURN fp_devuelve_n('dias_efec_poliza_ant');
+    --
+ END f_dev_dias_efec_poliza_ant;
+ --
+ --
+ /* -----------------------------------------------------
+ || p_asg_nom_riesgo:
+ ||
+ || Asigna la descripción del riesgo
+ || 
+ || Utilizado en:
+ || - A1001800.nom_prg_riesgo
+ */ -----------------------------------------------------
+ --
+ PROCEDURE p_asg_nom_riesgo(p_nom_riesgo a1001800.nom_prg_riesgo%TYPE)
+ IS
+ BEGIN
+    --
+    pp_asigna('nom_riesgo',p_nom_riesgo);
+    --
+ END p_asg_nom_riesgo;
+ --
+ --
+ /* -----------------------------------------------------
+ || p_asg_coef_anul:
+ ||
+ || Asigna el coeficiente de anulacion
+ || 
+ */ -----------------------------------------------------
+ --
+ PROCEDURE p_asg_coef_anul(p_coef_anul x2000290.coef_anulacion%TYPE)
+ IS
+ BEGIN
+    --
+    pp_asigna('coef_anul', p_coef_anul);
+    --
+ END p_asg_coef_anul;
+ --
+ -- 
+ /* -----------------------------------------------------
+ || p_asg_coef_cob:
+ ||
+ || Asigna el coeficiente de cobertura
+ || 
+ */ -----------------------------------------------------
+ --
+ PROCEDURE p_asg_coef_cob(p_coef_cob x2000290.coef_cob%TYPE)
+ IS
+ BEGIN
+    --
+    pp_asigna('coef_cob', p_coef_cob);
+    --
+ END p_asg_coef_cob;
+ --
+ --                 
+ /* -----------------------------------------------------
+ || p_asg_dev_mca_todos_riesgos_ta:
+ ||
+ || Asigna valor a la variable dev_mca_todos_riesgos_tarifica. 
+ || Como el nombre de variable ya tiene 30 caracteres, se adapta
+ || el nombre del procedimiento
+ || 
+ */ ----------------------------------------------------- 
+ --
+ PROCEDURE p_asg_dev_mca_todos_riesgos_ta(p_dev_mca_todos_riesgos_tarifi VARCHAR2)
+ IS
+ BEGIN
+    --   
+    pp_asigna('dev_mca_todos_riesgos_tarifica', p_dev_mca_todos_riesgos_tarifi);    
+    -- 
+ END p_asg_dev_mca_todos_riesgos_ta;
+ --
+END em_k_ptd_rsk;
+/
+

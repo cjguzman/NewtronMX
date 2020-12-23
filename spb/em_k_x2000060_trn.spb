@@ -1,0 +1,643 @@
+CREATE OR REPLACE PACKAGE BODY                   TRON2000.EM_K_X2000060_TRN AS
+ --
+ /* -------------------- VERSION = 1.08 -------------------- */
+ --
+ /* -------------------- MODIFICACIONES --------------------
+ || 2020/11/12 - JAPERE4 - 1.09 
+ || Se crea nueva funcion f_devuelve_benef_riesgo que devuelve 
+ || los intervinientes de un tip_benef concreto.
+ */ --------------------------------------------------------
+ --
+ /* --------------------------------------------------
+ || Aqui comienza la declaracion de variables GLOBALES
+ */ --------------------------------------------------
+ --
+ g_existe BOOLEAN := FALSE;
+ --
+ g_cod_idioma  g1010010.cod_idioma %TYPE;
+ g_cod_mensaje g1010020.cod_mensaje%TYPE;
+ --
+ g_anx_mensaje VARCHAR2(100);
+ --
+ --
+ /* ---------------------------------------------------
+ || Aqui comienza la declaracion de constantes GLOBALES
+ */ ---------------------------------------------------
+ --
+ g_k_ini_corchete CONSTANT VARCHAR2(2) := ' [';
+ g_k_fin_corchete CONSTANT VARCHAR2(1) := ']';
+ --
+ /* ----------------------------------------------------
+ || Aqui comienza la declaracion de subprogramas LOCALES
+ */ ----------------------------------------------------
+ --
+ /* -------------------- MODIFICACIONES --------------------
+ || TRON2000  - 99/09/03
+ || Creacion
+ */ --------------------------------------------------------
+ PROCEDURE devuelve_error IS
+ BEGIN
+  --
+  IF g_cod_mensaje BETWEEN 20000
+                       AND 20999
+   THEN
+    --
+    RAISE_APPLICATION_ERROR(-g_cod_mensaje,
+                            ss_k_mensaje.f_texto_idioma(g_cod_mensaje,
+                                                        g_cod_idioma ) ||
+                            g_anx_mensaje
+                           );
+    --
+   ELSE
+    --
+    RAISE_APPLICATION_ERROR(-20001,
+                            ss_k_mensaje.f_texto_idioma(g_cod_mensaje,
+                                                        g_cod_idioma ) ||
+                            g_anx_mensaje
+                           );
+    --
+  END IF;
+  --
+ END devuelve_error;
+ --
+ /* -------------------- MODIFICACIONES --------------------
+ || TRON2000  - 99/09/03
+ || Creacion
+ */ --------------------------------------------------------
+ PROCEDURE comprueba_error IS
+ BEGIN
+  --
+  IF NOT g_existe
+   THEN
+    --
+    g_cod_mensaje := 20001;
+    g_anx_mensaje := g_k_ini_corchete ||'PK x2000060' || g_k_fin_corchete;
+    --
+    devuelve_error;
+    --
+  END IF;
+  --
+ END comprueba_error;
+ --
+ /* --------------------------------------------------------
+ || Aqui comienza la declaracion de subprogramas del PACKAGE
+ */ --------------------------------------------------------
+ --
+ /* -------------------- MODIFICACIONES --------------------
+ || TRON2000  - 99/09/03
+ || Creacion
+ */ --------------------------------------------------------
+ PROCEDURE p_lee(
+                 p_cod_cia           x2000060.cod_cia          %TYPE,
+                 p_num_poliza        x2000060.num_poliza       %TYPE,
+                 p_num_riesgo        x2000060.num_riesgo       %TYPE,
+                 p_tip_benef         x2000060.tip_benef        %TYPE,
+                 p_tip_docum         x2000060.tip_docum        %TYPE,
+                 p_cod_docum         x2000060.cod_docum        %TYPE) IS
+ BEGIN
+  --
+  g_cod_idioma := trn_k_global.cod_idioma;
+  --
+  OPEN        c_x2000060(
+                         p_cod_cia          ,
+                         p_num_poliza       ,
+                         p_num_riesgo       ,
+                         p_tip_benef        ,
+                         p_tip_docum        ,
+                         p_cod_docum        );
+  FETCH       c_x2000060 INTO g_reg;
+  g_existe := c_x2000060%FOUND;
+  CLOSE       c_x2000060;
+  --
+  comprueba_error;
+  --
+ END p_lee;
+ --
+ /* -------------------- MODIFICACIONES --------------------
+ || TRON2000  - 99/09/03
+ || Creacion
+ */ --------------------------------------------------------
+ FUNCTION f_num_secu          RETURN NUMBER IS
+ BEGIN
+  --
+  comprueba_error;
+  --
+  RETURN g_reg.num_secu;
+  --
+ END f_num_secu;
+ --
+ /* -------------------- MODIFICACIONES --------------------
+ || TRON2000  - 99/09/03
+ || Creacion
+ */ --------------------------------------------------------
+ FUNCTION f_mca_baja          RETURN VARCHAR2 IS
+ BEGIN
+  --
+  comprueba_error;
+  --
+  RETURN g_reg.mca_baja;
+  --
+ END f_mca_baja;
+ --
+ /* -------------------- MODIFICACIONES --------------------
+ || TRON2000  - 99/09/03
+ || Creacion
+ */ --------------------------------------------------------
+ FUNCTION f_tip_docum_ant     RETURN VARCHAR2 IS
+ BEGIN
+  --
+  comprueba_error;
+  --
+  RETURN g_reg.tip_docum_ant;
+  --
+ END f_tip_docum_ant;
+ --
+ /* -------------------- MODIFICACIONES --------------------
+ || TRON2000  - 99/09/03
+ || Creacion
+ */ --------------------------------------------------------
+ FUNCTION f_cod_docum_ant     RETURN VARCHAR2 IS
+ BEGIN
+  --
+  comprueba_error;
+  --
+  RETURN g_reg.cod_docum_ant;
+  --
+ END f_cod_docum_ant;
+ --
+ /* -------------------- MODIFICACIONES --------------------
+ || TRON2000  - 99/09/03
+ || Creacion
+ */ --------------------------------------------------------
+ FUNCTION f_mca_vigente       RETURN VARCHAR2 IS
+ BEGIN
+  --
+  comprueba_error;
+  --
+  RETURN g_reg.mca_vigente;
+  --
+ END f_mca_vigente;
+ --
+ /* -------------------- MODIFICACIONES --------------------
+ || TRON2000  - 99/09/03
+ || Creacion
+ */ --------------------------------------------------------
+ FUNCTION f_mca_baja_ant      RETURN VARCHAR2 IS
+ BEGIN
+  --
+  comprueba_error;
+  --
+  RETURN g_reg.mca_baja_ant;
+  --
+ END f_mca_baja_ant;
+ --
+ /* -------------------- MODIFICACIONES --------------------
+ || TRON2000  - 99/09/03
+ || Creacion
+ */ --------------------------------------------------------
+ FUNCTION f_pct_participacion RETURN NUMBER IS
+ BEGIN
+  --
+  comprueba_error;
+  --
+  RETURN g_reg.pct_participacion;
+  --
+ END f_pct_participacion;
+ --
+ /* -------------------- MODIFICACIONES --------------------
+ || TRON2000  - 99/09/03
+ || Creacion
+ */ --------------------------------------------------------
+ FUNCTION f_fec_vcto_cesion   RETURN DATE IS
+ BEGIN
+  --
+  comprueba_error;
+  --
+  RETURN g_reg.fec_vcto_cesion;
+  --
+ END f_fec_vcto_cesion;
+ --
+ /* -------------------- MODIFICACIONES --------------------
+ || TRON2000  - 99/09/03
+ || Creacion
+ */ --------------------------------------------------------
+ FUNCTION f_imp_cesion        RETURN NUMBER IS
+ BEGIN
+  --
+  comprueba_error;
+  --
+  RETURN g_reg.imp_cesion;
+  --
+ END f_imp_cesion;
+ --
+ /* -------------------- MODIFICACIONES --------------------
+ || TRON2000  - 99/09/03
+ || Creacion
+ */ --------------------------------------------------------
+ FUNCTION f_num_prestamo      RETURN VARCHAR2 IS
+ BEGIN
+  --
+  comprueba_error;
+  --
+  RETURN g_reg.num_prestamo;
+  --
+ END f_num_prestamo;
+ --
+ /* --------------------------------------------------------
+ || f_mca_principal :
+ ||
+ ||
+ */ --------------------------------------------------------
+ FUNCTION f_mca_principal RETURN VARCHAR2 IS
+ BEGIN
+  --
+  comprueba_error;
+  --
+  RETURN g_reg.mca_principal;
+  --
+ END f_mca_principal;
+ --
+ /* --------------------------------------------------------
+ || f_mca_calculo :
+ ||
+ ||
+ */ --------------------------------------------------------
+ FUNCTION f_mca_calculo RETURN VARCHAR2 IS
+ BEGIN
+  --
+  comprueba_error;
+  --
+  RETURN g_reg.mca_calculo;
+  --
+ END f_mca_calculo;
+ --
+/* --------------------------------------------------------
+ || f_tip_relac :
+ ||
+ || Funci¿n que devuelve el valor de la columna tip_relac.
+ */ --------------------------------------------------------
+ --
+ FUNCTION f_tip_relac
+    RETURN VARCHAR2
+ IS
+ --
+ BEGIN
+    --
+    comprueba_error;
+    --
+    RETURN g_reg.tip_relac;
+    --
+ END f_tip_relac;
+ --
+ /* -------------------- MODIFICACIONES --------------------
+ || TRON2000  - 99/09/03
+ || Creacion
+ */ --------------------------------------------------------
+ PROCEDURE p_inserta(p_reg x2000060%ROWTYPE) IS
+ BEGIN
+    --
+    INSERT INTO x2000060
+          (cod_cia          ,
+           num_poliza       ,
+           num_riesgo       ,
+           tip_benef        ,
+           num_secu         ,
+           tip_docum        ,
+           cod_docum        ,
+           mca_principal    ,
+           mca_calculo      ,
+           pct_participacion,
+           fec_vcto_cesion  ,
+           imp_cesion       ,
+           num_prestamo     ,
+           mca_baja         ,
+           mca_vigente      ,
+           tip_docum_ant    ,
+           cod_docum_ant    ,
+           mca_baja_ant     ,
+           tip_relac
+          )
+    VALUES (p_reg.cod_cia          ,
+            p_reg.num_poliza       ,
+            p_reg.num_riesgo       ,
+            p_reg.tip_benef        ,
+            p_reg.num_secu         ,
+            p_reg.tip_docum        ,
+            p_reg.cod_docum        ,
+            p_reg.mca_principal    ,
+            p_reg.mca_calculo      ,
+            p_reg.pct_participacion,
+            p_reg.fec_vcto_cesion  ,
+            p_reg.imp_cesion       ,
+            p_reg.num_prestamo     ,
+            p_reg.mca_baja         ,
+            p_reg.mca_vigente      ,
+            p_reg.tip_docum_ant    ,
+            p_reg.cod_docum_ant    ,
+            p_reg.mca_baja_ant     ,
+            p_reg.tip_relac
+           );
+    --
+ END p_inserta;
+ --
+ /* -------------------- MODIFICACIONES --------------------
+ || TRON2000  - 98/10/07
+ || Creacion
+ */ --------------------------------------------------------
+ PROCEDURE p_devuelve_docum(p_cod_cia    IN     x2000060.cod_cia   %TYPE,
+                            p_num_poliza IN     x2000060.num_poliza%TYPE,
+                            p_num_riesgo IN     x2000060.num_riesgo%TYPE,
+                            p_tip_benef  IN     x2000060.tip_benef %TYPE,
+                            p_tip_docum  IN OUT x2000060.tip_docum %TYPE,
+                            p_cod_docum  IN OUT x2000060.cod_docum %TYPE) IS
+  --
+  CURSOR c_x2000060_docum(pl_cod_cia    x2000060.cod_cia   %TYPE,
+                          pl_num_poliza x2000060.num_poliza%TYPE,
+                          pl_num_riesgo x2000060.num_riesgo%TYPE,
+                          pl_tip_benef  x2000060.tip_benef %TYPE) IS
+         SELECT tip_docum ,
+                cod_docum
+           FROM x2000060
+          WHERE cod_cia    = pl_cod_cia
+            AND num_poliza = pl_num_poliza
+            AND num_riesgo = pl_num_riesgo
+            AND tip_benef  = pl_tip_benef
+            AND mca_baja   = 'N';
+  --
+ BEGIN
+  --
+  OPEN  c_x2000060_docum(p_cod_cia   ,
+                         p_num_poliza,
+                         p_num_riesgo,
+                         p_tip_benef );
+  FETCH c_x2000060_docum INTO p_tip_docum,
+                              p_cod_docum;
+  CLOSE c_x2000060_docum;
+  --
+ END p_devuelve_docum;
+ --
+ /* -------------------- MODIFICACIONES --------------------
+ || TRON2000  - 99/09/03
+ || Creacion
+ */ --------------------------------------------------------
+ FUNCTION f_docum_en_otro_tipo(
+                               p_cod_cia    x2000060.cod_cia   %TYPE,
+                               p_num_poliza x2000060.num_poliza%TYPE,
+                               p_num_riesgo x2000060.num_riesgo%TYPE,
+                               p_tip_benef  x2000060.tip_benef %TYPE,
+                               p_tip_docum  x2000060.tip_docum %TYPE,
+                               p_cod_docum  x2000060.cod_docum %TYPE)
+          RETURN BOOLEAN IS
+  --
+  CURSOR c_x2000060_otro_tipo IS
+         SELECT cod_cia
+           FROM x2000060
+          WHERE cod_cia     = p_cod_cia
+            AND num_poliza  = p_num_poliza
+            AND num_riesgo  = p_num_riesgo
+            AND tip_benef  != p_tip_benef
+            AND tip_docum   = p_tip_docum
+            AND cod_docum   = p_cod_docum;
+  --
+  l_reg c_x2000060_otro_tipo%ROWTYPE;
+  --
+  l_retorno BOOLEAN;
+  --
+ BEGIN
+  --
+  OPEN         c_x2000060_otro_tipo;
+  FETCH        c_x2000060_otro_tipo INTO l_reg;
+  l_retorno := c_x2000060_otro_tipo%FOUND;
+  CLOSE        c_x2000060_otro_tipo;
+  --
+  RETURN l_retorno;
+  --
+ END f_docum_en_otro_tipo;
+ --
+ /* -------------------- MODIFICACIONES --------------------
+ || TRON2000  - 99/09/03
+ || Creacion
+ */ --------------------------------------------------------
+ FUNCTION f_sum_imp_cesion(p_cod_cia    x2000060.cod_cia   %TYPE,
+                           p_num_poliza x2000060.num_poliza%TYPE,
+                           p_num_riesgo x2000060.num_riesgo%TYPE)
+          RETURN NUMBER IS
+  --
+  CURSOR c_x2000060_imp_cesion IS
+         SELECT NVL(SUM(NVL(imp_cesion,0)),0)
+           FROM x2000060
+          WHERE cod_cia           = p_cod_cia
+            AND num_poliza        = p_num_poliza
+            AND num_riesgo        = p_num_riesgo
+            AND tip_benef         = '8'
+            AND NVL(mca_baja,'N') = 'N';
+  --
+  l_retorno NUMBER;
+  --
+ BEGIN
+  --
+  OPEN  c_x2000060_imp_cesion;
+  FETCH c_x2000060_imp_cesion INTO l_retorno;
+  CLOSE c_x2000060_imp_cesion;
+  --
+  RETURN l_retorno;
+  --
+ END f_sum_imp_cesion;
+ --
+ /* ----------------------------------------------------------------
+ || f_existe_modificacion :
+ ||
+ || Comprueba si existe alguna modificacion
+ */ ----------------------------------------------------------------
+ --
+ FUNCTION f_existe_modificacion(p_cod_cia    x2000060.cod_cia    %TYPE ,
+                                p_num_poliza x2000060.num_poliza %TYPE )
+          RETURN VARCHAR2 IS
+  --
+  CURSOR c_x2000060 IS
+         SELECT 'S'
+           FROM x2000060
+          WHERE cod_cia         = p_cod_cia
+            AND num_poliza      = p_num_poliza
+            AND (    tip_docum != NVL(tip_docum_ant,'X')
+                  OR cod_docum != NVL(cod_docum_ant,'X')
+                  OR mca_baja  != NVL(mca_baja_ant,'X')
+                );
+  --
+  l_existe_modificacion VARCHAR2(1);
+  --
+ BEGIN
+   --
+   OPEN  c_x2000060;
+   FETCH c_x2000060 INTO l_existe_modificacion;
+   --
+   IF c_x2000060%NOTFOUND
+    THEN
+      --
+      l_existe_modificacion := 'N';
+      --
+   END IF;
+   --
+   CLOSE c_x2000060;
+   --
+   RETURN l_existe_modificacion;
+   --
+ END f_existe_modificacion;
+ --
+ /*------------ DESCRIPCION ---------------------------------------------
+ || f_tab_subagentes:
+ || Retorna la tabla con los datos de subagentes por poliza, que no esten
+ || dados de baja y figuren como Tipo de Benificiario
+ */ ---------------------------------------------------------------------
+ --
+ FUNCTION f_tab_subagentes( p_cod_cia         a2000030.cod_cia       %TYPE  ,
+                            p_num_poliza      a2000030.num_poliza    %TYPE  )
+    RETURN dc_k_a1001337.table_cod_emp_agt
+ IS
+    --
+    l_k_tip_benef_subagente    a2000060.tip_benef      %TYPE := em.TIP_BENEF_SUBAGENTE;
+    l_cod_act_tercero          g2001801.cod_act_tercero%TYPE;
+    --
+    l_k_nulo                   VARCHAR2(1)             := trn.NULO;
+    --
+    CURSOR  l_c_subagentes IS
+       SELECT a.tip_docum,
+              a.cod_docum
+         FROM x2000060 a
+        WHERE a.cod_cia      = p_cod_cia
+          AND a.num_poliza   = p_num_poliza
+          AND a.tip_benef    = l_k_tip_benef_subagente
+          AND a.mca_baja     = trn.NO;
+    --
+    l_reg_subag       l_c_subagentes       %ROWTYPE;
+    --
+    l_cod_tercero     v1001390.COD_TERCERO %TYPE;
+    --
+    p_t_tab_subag     dc_k_a1001337.table_cod_emp_agt;
+    --
+    l_inx             BINARY_INTEGER := trn.CERO;
+    --
+ BEGIN
+    --
+    em_k_g2001801.p_lee ( p_cod_cia   => p_cod_cia               ,
+                          p_tip_benef => l_k_tip_benef_subagente );
+    --
+    l_cod_act_tercero := em_k_g2001801.f_cod_act_tercero;
+    --
+    OPEN l_c_subagentes;
+    --
+    LOOP
+       FETCH l_c_subagentes INTO l_reg_subag;
+       --
+       EXIT WHEN l_c_subagentes%NOTFOUND;
+       --
+       dc_k_v1001390.p_lee(p_cod_cia         => p_cod_cia             ,
+                           p_cod_act_tercero => l_cod_act_tercero     ,
+                           p_tip_docum       => l_reg_subag.tip_docum ,
+                           p_cod_docum       => l_reg_subag.cod_docum ,
+                           p_cod_tercero     => l_k_nulo              );
+       --
+       l_cod_tercero := dc_k_v1001390.f_cod_tercero;
+       --
+       l_inx := l_inx + 1;
+       --
+       p_t_tab_subag(l_inx) := l_cod_tercero;
+       --
+    END LOOP;
+    --
+    CLOSE l_c_subagentes;
+    --
+    RETURN p_t_tab_subag;
+    --
+ END;
+ --
+ /* -----------------------------------------------------
+  || f_devuelve_benef :
+  ||
+  || Devuelve los beneficiarios
+ */ -----------------------------------------------------
+ --
+ FUNCTION f_devuelve_benef (p_cod_cia        x2000060.cod_cia       %TYPE,
+                            p_num_poliza     x2000060.num_poliza    %TYPE)
+    RETURN t_benef IS
+    --
+    l_t_benef    t_benef;
+    --
+ BEGIN
+    --
+    SELECT cod_cia                ,
+           num_poliza             ,
+           num_riesgo             ,
+           tip_benef              ,
+           num_secu               ,
+           tip_docum              ,
+           cod_docum              ,
+           mca_principal          ,
+           mca_calculo            ,
+           pct_participacion      ,
+           fec_vcto_cesion        ,
+           imp_cesion             ,
+           mca_baja               ,
+           mca_vigente            ,
+           NVL (tip_docum_ant,'X'),
+           NVL (cod_docum_ant,'X'),
+           NVL (mca_baja_ant ,'X'),
+           num_prestamo           ,
+           tip_relac
+      BULK COLLECT INTO l_t_benef
+      FROM x2000060
+     WHERE cod_cia        = p_cod_cia
+       AND num_poliza     = p_num_poliza;
+    --
+    RETURN l_t_benef;
+    --
+ END f_devuelve_benef;
+ --
+ /* -----------------------------------------------------
+ || f_devuelve_benef :
+ ||
+ || Devuelve los intervinientes con un tipo tip_benef especifico
+ */ -----------------------------------------------------
+ --
+ FUNCTION f_devuelve_benef_riesgo (p_cod_cia    x2000060.cod_cia    %TYPE,
+                                   p_num_poliza x2000060.num_poliza %TYPE,
+                                   p_num_riesgo x2000060.num_riesgo %TYPE,
+                                   p_tip_benef  x2000060.tip_benef  %TYPE)
+    RETURN t_benef IS
+    --
+    l_t_benef    t_benef;
+    --
+ BEGIN
+    --
+    SELECT cod_cia                ,
+           num_poliza             ,
+           num_riesgo             ,
+           tip_benef              ,
+           num_secu               ,
+           tip_docum              ,
+           cod_docum              ,
+           mca_principal          ,
+           mca_calculo            ,
+           pct_participacion      ,
+           fec_vcto_cesion        ,
+           imp_cesion             ,
+           mca_baja               ,
+           mca_vigente            ,
+           NVL (tip_docum_ant,'X'),
+           NVL (cod_docum_ant,'X'),
+           NVL (mca_baja_ant ,'X'),
+           num_prestamo           ,
+           tip_relac
+      BULK COLLECT INTO l_t_benef
+      FROM x2000060
+     WHERE cod_cia     = p_cod_cia
+       AND num_poliza  = p_num_poliza
+       AND num_riesgo  = p_num_riesgo
+       AND tip_benef   = p_tip_benef;
+    --
+    RETURN l_t_benef;
+    --
+ END f_devuelve_benef_riesgo;
+ --
+END em_k_x2000060_trn;
+/

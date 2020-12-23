@@ -1,0 +1,59 @@
+--
+/* -------------------- MODIFICACIONES --------------------------------------
+|| 2020/11/12 - ricomonx - v 1.00
+|| Creacion
+|| --
+|| Ceacion del procedimiento:  p_val_color
+|| Validacion del codigo del color del vehiculo. 
+|| --------------------------------------------------------------------------
+|| 2020/11/17 - ricomonx - v 1.01
+|| Modificacion
+|| --
+|| Modificacion del procedimiento:  p_val_color
+|| Validacion del codigo del color del vehiculo. 
+|| --------------------------------------------------------------------------
+|| 2020/11/20 - ricomonx - v 1.02
+|| Se creo el procedimiento:  p_val_anio_sub_modelo
+|| Procedimiento que valida que el modelo del año sea del anio actual o del
+|| siguiente para que pueda ser indemnizado a valor factura.
+|| --
+|| Se creo el procedimiento:  p_val_val_sub_modelo
+|| Valida que el valor del sub modelo este dentro del rango
+|| permitido (min y max).
+|| --
+|| Se creo la funcion:  f_dev_val_sub_modelo
+|| Funcion que devuelve el valor del sub modelo.
+|| --------------------------------------------------------------------------
+|| 2020/11/24 - jaluis2 - v 1.03
+|| Se creo el procedimiento:  p_val_modalidad
+|| Procedimiento que valida que la modalidad proporcionada
+|| sea correcta en funcion de ramo tipo y uso de 
+|| vehiculo
+|| --
+|| Se creo el procedimiento:  p_val_tip_vehi
+|| Procedimiento que valida el tipo de vehiculo
+|| --
+|| Se creo el procedimiento:  p_val_uso_vehi
+|| Procedimiento que valida el uso de vehiculo
+|| --------------------------------------------------------------------------
+|| 2020/11/27 - jaluis2 - v 1.04 
+|| -- 
+|| Se modifica el procedimiento p_val_tip_vehi: 
+|| Se cambia la signatura del metodo añadiendo los parametros: 
+|| p_cod_cia, p_cod_tip_vehi, p_fec_validez  
+|| -- 
+|| Se modifica el procedimiento p_val_uso_vehi: 
+|| Se cambia la signatura del metodo añadiendo los parametros: 
+|| p_cod_cia, p_cod_uso_vehi, p_fec_validez  
+|| --  
+|| Se añade subtipo SUBTYPE t_num_puertas  
+|| --------------------------------------------------------------------------
+|| 2020/11/30 - hsolive - v 1.05
+|| Se crea el metodo para validacion de la modalidad pudiendo indicar
+|| mediante el parametro fecha, cual seria la fecha a usar para verificarla 
+|| --------------------------------------------------------------------------
+|| 2020/12/01 - paviabrx - v 1.06
+|| Se elimino el subtipo cod_canal_13_gen
+*/ --------------------------------------------------------------------------
+--
+/

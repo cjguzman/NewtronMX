@@ -1,0 +1,36 @@
+---------------------------------------------------------------------------------------------------------
+---TRP_MX_DL Plantilla pdc Lógica (v1.2)                                                              ---
+---------------------------------------------------------------------------------------------------------
+---Nombre de la Lógica:	  em_k_ta999001
+---Propietario/Cedente:	  TRP_MX_DL
+---Beneficiarios:	  TRON2000
+---Sinónimos en:	  TRON2000
+---Nombre del Sinónimo:	  em_k_ta999001
+---Variables a sustituir: l_logica, l_propietario
+---Fecha realización:	  05-11-2020 10:48:00
+---Realizado por:	  JAPERE4
+---Comentario:		  Los valores de las variables l_logica y l_propietario deberán sustituirse
+---------------------------------------------------------------------------------------------------------
+--
+DECLARE
+   --
+   -- Por favor, sustituya los valores de las variables l_logica y l_propietario por sus correspondientes.
+   --
+   l_logica		    VARCHAR2(30) := 'em_k_ta999001';
+   l_propietario	VARCHAR2(30) := 'TRP_MX_DL';
+   --
+   l_tron2000		VARCHAR2(30) := 'TRON2000';
+   --
+   --
+   -- Se otorga privilegio sobre la lógica del esquema propietario (l_propietario) a TRON2000
+   l_grant_TRON2000    VARCHAR2 (1000) := 'GRANT EXECUTE ON '||l_propietario||'.'||l_logica||' TO '||l_tron2000;
+
+   -- Se crea un sinónimo en TRON2000 con el mismo nombre de la lógica
+   l_synonym_TRON2000  VARCHAR2 (1000) := 'CREATE OR REPLACE SYNONYM '||l_tron2000||'.'||l_logica||' FOR '||l_propietario||'.'||l_logica;
+   --
+BEGIN
+   EXECUTE IMMEDIATE l_grant_TRON2000;
+   EXECUTE IMMEDIATE l_synonym_TRON2000;
+END;
+/
+

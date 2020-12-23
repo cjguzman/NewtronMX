@@ -1,0 +1,307 @@
+CREATE OR REPLACE PACKAGE BODY TRON2000.DC_K_PTD AS
+ --
+ /* -------------------- VERSION = 1.01 -------------------- */
+ --
+ /* -------------------- MODIFICACIONES --------------------
+ || 2020/11/26 - fjbrauz - 1.03 (incluyo aquí comentario hasta ser
+ || incluido en el hpb).
+ ||
+ || Definicion del método (f_con_codigo_postal) que devuelve
+ || el registro de la tabla de codigos postales correspondiente al 
+ || pais y codigo postal enviado. Solo permite codigos postales reales 
+ ||
+ || 2020/10/24 - abmuno - 1.02 (incluyo aquí comentario hasta ser
+ || incluido en el hpb).
+ ||
+ || Definicion del método (f_dev_vrb_nam_val) que devuelve
+ || el valor de una constante de la tabla de constantes 
+ || df_cmn_nwt_xx_cnn.
+ ||
+ || 2020/10/14 - hsolive - 1.01
+ ||
+ || Definicion de método devuelve la fecha de validez
+ */ --------------------------------------------------------
+ --
+ /* --------------------------------------------------
+ || Aqui comienza la declaracion de variables GLOBALES
+ */ --------------------------------------------------
+ --
+ --
+ /* ---------------------------------------------------
+ || Aqui comienza la declaracion de constantes GLOBALES
+ */ ---------------------------------------------------
+ --
+ g_k_fmt_f CONSTANT VARCHAR2(8) := 'ddmmyyyy';
+ --
+ /* ----------------------------------------------------
+ || Aqui comienza la declaracion de subprogramas LOCALES
+ */ ----------------------------------------------------
+ --
+ /* -----------------------------------------------------
+ || pp_asigna:
+ ||
+ || Llama a trn_k_global.asigna
+ */ -----------------------------------------------------
+ --
+ PROCEDURE pp_asigna(p_nom_global VARCHAR2,
+                     p_val_global VARCHAR2) IS
+ BEGIN
+  --
+  trn_k_global.asigna(p_nom_global,p_val_global);
+  --
+ END pp_asigna;
+ --
+ /* -----------------------------------------------------
+ || pp_asigna:
+ ||
+ || Llama a trn_k_global.asigna
+ */ -----------------------------------------------------
+ --
+ PROCEDURE pp_asigna(p_nom_global VARCHAR2,
+                     p_val_global NUMBER  ) IS
+ BEGIN
+  --
+  trn_k_global.asigna(p_nom_global,TO_CHAR(p_val_global));
+  --
+ END pp_asigna;
+ --
+ /* -----------------------------------------------------
+ || pp_asigna:
+ ||
+ || Llama a trn_k_global.asigna
+ */ -----------------------------------------------------
+ --
+ PROCEDURE pp_asigna(p_nom_global VARCHAR2,
+                     p_val_global DATE    ) IS
+ BEGIN
+  --
+  trn_k_global.asigna(p_nom_global,TO_CHAR(p_val_global,g_k_fmt_f));
+  --
+ END pp_asigna;
+ --
+ /* -----------------------------------------------------
+ || fp_devuelve_c:
+ ||
+ || Llama a trn_k_global.devuelve y retorna como VARCHAR2
+ */ -----------------------------------------------------
+ --
+ FUNCTION fp_devuelve_c(p_nom_global VARCHAR2)
+          RETURN VARCHAR2 IS
+ BEGIN
+  --
+  RETURN trn_k_global.devuelve(p_nom_global);
+  --
+ END fp_devuelve_c;
+ --
+ /* -----------------------------------------------------
+ || fp_devuelve_n:
+ ||
+ || Llama a trn_k_global.devuelve y retorna como NUMBER
+ */ -----------------------------------------------------
+ --
+ FUNCTION fp_devuelve_n(p_nom_global VARCHAR2)
+          RETURN NUMBER IS
+ BEGIN
+  --
+  RETURN TO_NUMBER(trn_k_global.devuelve(p_nom_global));
+  --
+ END fp_devuelve_n;
+ --
+ /* -----------------------------------------------------
+ || fp_devuelve_f:
+ ||
+ || Llama a trn_k_global.devuelve y retorna como DATE
+ */ -----------------------------------------------------
+ --
+ FUNCTION fp_devuelve_f(p_nom_global VARCHAR2)
+          RETURN DATE IS
+ BEGIN
+  --
+  RETURN TO_DATE(trn_k_global.devuelve(p_nom_global),g_k_fmt_f);
+  --
+ END fp_devuelve_f;
+ --
+ /* --------------------------------------------------------
+ || Aqui comienza la declaracion de subprogramas del PACKAGE
+ */ --------------------------------------------------------
+ --
+ --
+ /* -----------------------------------------------------
+ || f_dev_cod_cia:
+ ||
+ || Devuelve la compañía
+ */ -----------------------------------------------------
+ --
+ FUNCTION f_dev_cod_cia
+          RETURN a1000900.cod_cia%TYPE IS
+ BEGIN
+  --
+  RETURN trn_k_global.cod_cia;
+  --
+ END f_dev_cod_cia;
+ --
+ /* -----------------------------------------------------
+ || f_dev_cod_idioma_cia:
+ ||
+ || Devuelve el idioma de la compañía
+ */ -----------------------------------------------------
+ --
+ FUNCTION f_dev_cod_idioma_cia
+          RETURN g1010010.cod_idioma%TYPE IS
+ BEGIN
+  --
+  RETURN trn_k_global.cod_idioma_cia;
+  --
+ END f_dev_cod_idioma_cia;
+ --
+ --
+ /* -----------------------------------------------------
+ || f_dev_cod_mon:
+ ||
+ || Devuelve la moneda de la compañía
+ */ -----------------------------------------------------
+ --
+ FUNCTION f_dev_cod_mon
+          RETURN a1000900.cod_mon%TYPE IS
+ BEGIN
+  --
+  RETURN trn_k_global.cod_mon;
+  --
+ END f_dev_cod_mon;
+ --
+ --
+ /* -----------------------------------------------------
+ || f_dev_fev_validez:
+ ||
+ || Devuelve la fecha de validez
+ */ -----------------------------------------------------
+ --
+ FUNCTION f_dev_fec_validez
+          RETURN g2000020.fec_validez%TYPE IS
+ BEGIN
+  --
+  RETURN fp_devuelve_f('fec_validez');
+  --
+ END f_dev_fec_validez;
+ --
+ --
+ /* --------------------------------------------------------
+ || f_dev_vrb_nam_val :
+ ||
+ || Devuelve el valor de la constante
+ */ --------------------------------------------------------
+ --
+ FUNCTION f_dev_vrb_nam_val(p_vrb_nam df_cmn_nwt_xx_cnn.vrb_nam%TYPE)
+          RETURN df_cmn_nwt_xx_cnn.vrb_nam_val%TYPE IS
+ BEGIN
+    --
+    RETURN trn_k_df_cmn_nwt_xx_cnn.f_vrb_nam_val(p_vrb_nam => p_vrb_nam);
+    --
+ END f_dev_vrb_nam_val;
+ --
+ --
+ /* -----------------------------------------------------
+ || f_dev_cod_est:
+ ||
+ || Devuelve el codigo de estructura
+ */ -----------------------------------------------------
+ --
+ FUNCTION f_dev_cod_est RETURN g9990003.cod_est%TYPE
+ IS
+ BEGIN
+    --
+    RETURN fp_devuelve_c('cod_est');                                                     
+    --
+ END f_dev_cod_est;
+ --
+ /* -----------------------------------------------------
+ || f_dev_c_cod_est:
+ ||
+ || Devuelve el codigo de estructura
+ */ -----------------------------------------------------
+ --
+ FUNCTION f_dev_c_cod_est RETURN g9990003.cod_est%TYPE
+ IS
+ BEGIN
+    --
+    RETURN fp_devuelve_c('c_cod_est');                                                     
+    --
+ END f_dev_c_cod_est;
+ --
+ --
+ /* -----------------------------------------------------
+ || f_con_estructura:
+ || 
+ || Devuelve informacion del código de estructura.
+ */ -----------------------------------------------------
+ --
+ FUNCTION f_con_estructura (p_cod_est    g9990003.cod_est %TYPE)
+          RETURN record_est
+ IS
+   --
+   l_reg_informacion_estructura   record_est;
+   l_reg_g9990003                 g9990003%ROWTYPE;
+   --
+ BEGIN
+    --
+    trn_k_ptd.p_gen_comienzo_traza(p_nom_prg    => 'dc_k_ptd',
+                                   p_nom_metodo => 'f_con_estructura');
+    --
+    trn_k_ptd.p_gen_traza_parametro (p_nom_prg       => 'dc_k_ptd',
+                                     p_nom_parametro => 'p_cod_est',
+                                     p_val_parametro => p_cod_est);
+    --                                     
+    dc_k_g9990003.p_lee (p_cod_est => p_cod_est);
+    --
+    l_reg_g9990003 := dc_k_g9990003.f_devuelve_reg;
+    --
+    l_reg_informacion_estructura.nom_est            := l_reg_g9990003.nom_est;
+    l_reg_informacion_estructura.cod_pgm            := l_reg_g9990003.cod_pgm;
+    --
+    trn_k_ptd.p_gen_final_traza(p_nom_prg    => 'dc_k_ptd',
+                                p_nom_metodo => 'f_con_estructura');
+    --
+    RETURN l_reg_informacion_estructura;
+    --
+ END f_con_estructura;         
+ --
+ /* -----------------------------------------------------
+ || f_con_codigo_postal:
+ || 
+ || Devuelve informacion del código postal.
+ */ -----------------------------------------------------
+ --
+ FUNCTION f_con_cod_postal (p_cod_pais    A1000103.cod_pais%TYPE,
+                               p_cod_postal  A1000103.cod_postal%TYPE)
+          RETURN record_codigo_postal
+  IS   
+     --
+     l_reg_cod_postal              record_codigo_postal;
+     --
+ BEGIN
+    --
+    trn_k_ptd.p_gen_comienzo_traza(p_nom_prg    => 'dc_k_ptd',
+                                   p_nom_metodo => 'f_con_codigo_postal');
+    --
+    trn_k_ptd.p_gen_traza_parametro (p_nom_prg       => 'dc_k_ptd',
+                                     p_nom_parametro => 'p_cod_pais',
+                                     p_val_parametro => p_cod_pais);
+    --       
+    trn_k_ptd.p_gen_traza_parametro (p_nom_prg       => 'dc_k_ptd',
+                                     p_nom_parametro => 'p_cod_postal',
+                                     p_val_parametro => p_cod_postal);
+    --
+    dc_k_a1000103.p_lee_2(p_cod_pais => p_cod_pais,
+                          p_cod_postal => p_cod_postal);
+    --                      
+    l_reg_cod_postal := dc_k_a1000103.f_devuelve_reg;                              
+    --
+    trn_k_ptd.p_gen_final_traza(p_nom_prg    => 'dc_k_ptd',
+                                p_nom_metodo => 'f_con_codigo_postal');
+    --
+    RETURN l_reg_cod_postal;
+    --
+  END f_con_cod_postal;  
+ --
+END dc_k_ptd;
+/

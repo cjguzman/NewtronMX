@@ -1,0 +1,545 @@
+CREATE OR REPLACE PACKAGE BODY                   TRON2000.EM_K_R2000060_TRN AS
+ --
+ /* -------------------- VERSION = 1.05 -------------------- */
+ --
+ /* -------------------- MODIFICACIONES --------------------
+ || 2011/07/06 - MJBONILLA - 1.05 - (MS-2010-05-00734)
+ || Se crea la funcion f_tip_relac para devolver el valor de
+ || la columan tip_relac, ademas se integra nuevo campo tip_relac
+ || en el procedimiento p_inserta.
+ */ --------------------------------------------------------
+ --
+ /* --------------------------------------------------
+ || Aqui comienza la declaracion de variables GLOBALES
+ */ --------------------------------------------------
+ --
+ greg r2000060%ROWTYPE;
+ --
+ g_existe BOOLEAN := FALSE;
+ --
+ g_cod_idioma  g1010010.cod_idioma %TYPE;
+ g_cod_mensaje g1010020.cod_mensaje%TYPE;
+ --
+ g_anx_mensaje VARCHAR2(100);
+ --
+ /* ---------------------------------------------------
+ || Aqui comienza la declaracion de constantes GLOBALES
+ */ ---------------------------------------------------
+ --
+ g_k_ini_corchete CONSTANT VARCHAR2(2) := ' [';
+ g_k_fin_corchete CONSTANT VARCHAR2(1) := ']';
+ --
+ /* ----------------------------------------------------
+ || Aqui comienza la declaracion de subprogramas LOCALES
+ */ ----------------------------------------------------
+ --
+ /* -----------------------------------------------------
+ || pp_devuelve_error : Devuelve el error al llamador
+ */ -----------------------------------------------------
+ --
+ PROCEDURE pp_devuelve_error
+ IS
+ BEGIN
+  --
+  IF g_cod_mensaje BETWEEN 20000
+                       AND 20999
+  THEN
+     --
+     RAISE_APPLICATION_ERROR(-g_cod_mensaje,
+                             ss_k_mensaje.f_texto_idioma(g_cod_mensaje,
+                                                         g_cod_idioma ) ||
+                             g_anx_mensaje
+                            );
+     --
+  ELSE
+     --
+     RAISE_APPLICATION_ERROR(-20000,
+                             ss_k_mensaje.f_texto_idioma(g_cod_mensaje,
+                                                         g_cod_idioma ) ||
+                             g_anx_mensaje
+                            );
+     --
+  END IF;
+  --
+ END pp_devuelve_error;
+ --
+ /* -----------------------------------------------------
+ || pp_comprueba_error : Comprueba que se haya leido informacion
+ */ -----------------------------------------------------
+ --
+ PROCEDURE pp_comprueba_error
+ IS
+ BEGIN
+  --
+  IF NOT g_existe
+  THEN
+     --
+     g_cod_mensaje := 20001;
+     g_anx_mensaje := g_k_ini_corchete || 'PK r2000060' || g_k_fin_corchete;
+     --
+     pp_devuelve_error;
+     --
+  END IF;
+  --
+ END pp_comprueba_error;
+ --
+ /* --------------------------------------------------------
+ || Aqui comienza la declaracion de subprogramas del PACKAGE
+ */ --------------------------------------------------------
+ --
+ /* -----------------------------------------------------
+ || p_lee : Lee el registro
+ */ -----------------------------------------------------
+ --
+ PROCEDURE p_lee(
+                 p_cod_cia           r2000060.cod_cia          %TYPE,
+                 p_num_poliza        r2000060.num_poliza       %TYPE,
+                 p_num_spto          r2000060.num_spto         %TYPE,
+                 p_num_apli          r2000060.num_apli         %TYPE,
+                 p_num_spto_apli     r2000060.num_spto_apli    %TYPE,
+                 p_tip_benef         r2000060.tip_benef        %TYPE,
+                 p_num_riesgo        r2000060.num_riesgo       %TYPE,
+                 p_tip_docum         r2000060.tip_docum        %TYPE,
+                 p_cod_docum         r2000060.cod_docum        %TYPE)
+ IS
+  --
+  CURSOR cl_r2000060 IS
+         SELECT *
+           FROM r2000060
+          WHERE cod_cia           = p_cod_cia
+            AND num_poliza        = p_num_poliza
+            AND num_spto          = p_num_spto
+            AND num_apli          = p_num_apli
+            AND num_spto_apli     = p_num_spto_apli
+            AND tip_benef         = p_tip_benef
+            AND num_riesgo        = p_num_riesgo
+            AND tip_docum         = p_tip_docum
+            AND cod_docum         = p_cod_docum
+                ;
+  --
+ BEGIN
+  --
+  g_cod_idioma := trn_k_global.cod_idioma;
+  --
+  OPEN        cl_r2000060;
+  FETCH       cl_r2000060 INTO greg;
+  g_existe := cl_r2000060%FOUND;
+  CLOSE       cl_r2000060;
+  --
+  pp_comprueba_error;
+  --
+ END p_lee;
+ --
+ /* -----------------------------------------------------
+ || f_num_secu         : Devuelve el valor de la columna num_secu
+ */ -----------------------------------------------------
+ --
+ FUNCTION f_num_secu          RETURN NUMBER
+ IS
+ BEGIN
+  --
+  pp_comprueba_error;
+  --
+  RETURN greg.num_secu;
+  --
+ END f_num_secu;
+ --
+ /* -----------------------------------------------------
+ || f_mca_vigente      : Devuelve el valor de la columna mca_vigente
+ */ -----------------------------------------------------
+ --
+ FUNCTION f_mca_vigente       RETURN VARCHAR2
+ IS
+ BEGIN
+  --
+  pp_comprueba_error;
+  --
+  RETURN greg.mca_vigente;
+  --
+ END f_mca_vigente;
+ --
+ /* -----------------------------------------------------
+ || f_mca_baja         : Devuelve el valor de la columna mca_baja
+ */ -----------------------------------------------------
+ --
+ FUNCTION f_mca_baja          RETURN VARCHAR2
+ IS
+ BEGIN
+  --
+  pp_comprueba_error;
+  --
+  RETURN greg.mca_baja;
+  --
+ END f_mca_baja;
+ --
+ /* -----------------------------------------------------
+ || f_pct_participacion: Devuelve el valor de la columna pct_participacion
+ */ -----------------------------------------------------
+ --
+ FUNCTION f_pct_participacion RETURN NUMBER
+ IS
+ BEGIN
+  --
+  pp_comprueba_error;
+  --
+  RETURN greg.pct_participacion;
+  --
+ END f_pct_participacion;
+ --
+ /* -----------------------------------------------------
+ || f_fec_vcto_cesion  : Devuelve el valor de la columna fec_vcto_cesion
+ */ -----------------------------------------------------
+ --
+ FUNCTION f_fec_vcto_cesion   RETURN DATE
+ IS
+ BEGIN
+  --
+  pp_comprueba_error;
+  --
+  RETURN greg.fec_vcto_cesion;
+  --
+ END f_fec_vcto_cesion;
+ --
+ /* -----------------------------------------------------
+ || f_imp_cesion       : Devuelve el valor de la columna imp_cesion
+ */ -----------------------------------------------------
+ --
+ FUNCTION f_imp_cesion        RETURN NUMBER
+ IS
+ BEGIN
+  --
+  pp_comprueba_error;
+  --
+  RETURN greg.imp_cesion;
+  --
+ END f_imp_cesion;
+ --
+ /* -----------------------------------------------------
+ || f_num_prestamo     : Devuelve el valor de la columna num_prestamo
+ */ -----------------------------------------------------
+ --
+ FUNCTION f_num_prestamo RETURN VARCHAR2
+ IS
+ BEGIN
+  --
+  pp_comprueba_error;
+  --
+  RETURN greg.num_prestamo;
+  --
+ END f_num_prestamo;
+ --
+ /* -----------------------------------------------------
+ || f_mca_principal :
+ ||
+ || Devuelve el valor de la columna mca_principal
+ */ -----------------------------------------------------
+ --
+ FUNCTION f_mca_principal     RETURN VARCHAR2 IS
+ BEGIN
+  --
+  pp_comprueba_error;
+  --
+  RETURN greg.mca_principal;
+  --
+ END f_mca_principal;
+ --
+ /* -----------------------------------------------------
+ || f_mca_calculo :
+ ||
+ || Devuelve el valor de la columna mca_calculo
+ */ -----------------------------------------------------
+ --
+ FUNCTION f_mca_calculo     RETURN VARCHAR2 IS
+ BEGIN
+  --
+  pp_comprueba_error;
+  --
+  RETURN greg.mca_calculo;
+  --
+ END f_mca_calculo;
+ --
+ /* --------------------------------------------------------
+ || f_tip_relac :
+ ||
+ || Devuelve el valor de la columna tip_relac
+ */ --------------------------------------------------------
+ --
+ FUNCTION f_tip_relac
+    RETURN VARCHAR2
+ IS
+ --
+ BEGIN
+    --
+    pp_comprueba_error;
+    --
+    RETURN greg.tip_relac;
+    --
+ END f_tip_relac;
+ --
+ /* -----------------------------------------------------
+ || f_devuelve_reg : Devuelve el registro completo
+ */ -----------------------------------------------------
+ --
+ FUNCTION f_devuelve_reg RETURN r2000060%ROWTYPE
+ IS
+ BEGIN
+  --
+  pp_comprueba_error;
+  --
+  RETURN greg;
+  --
+ END f_devuelve_reg;
+ --
+ /*------------------------------------------------------
+ || Devuelve la tabla con los datos de los subagentes vigentes
+ || por p¿liza.
+ */ -----------------------------------------------------
+ --
+ FUNCTION f_tab_subagentes( p_cod_cia         r2000030.cod_cia       %TYPE,
+                            p_num_poliza      r2000030.num_poliza    %TYPE,
+                            p_num_apli        r2000030.num_apli      %TYPE,
+                            p_fec_vigencia    r2000030.fec_efec_spto %TYPE )
+          RETURN dc_k_a1001337.table_cod_emp_agt IS
+ --
+ l_k_tip_benef_subagente    r2000060.tip_benef      %TYPE := em.TIP_BENEF_SUBAGENTE;
+ l_cod_act_tercero          g2001801.cod_act_tercero%TYPE;
+ --
+ l_k_no                     VARCHAR2(1)             := trn.NO;
+ l_k_nulo                   VARCHAR2(1)             := trn.NULO;
+ --
+ CURSOR  l_c_subagentes IS
+  SELECT a.tip_docum,
+         a.cod_docum
+  FROM   r2000060 a
+ WHERE   a.cod_cia       = p_cod_cia
+   AND   a.num_poliza    = p_num_poliza
+   AND   a.num_apli      = p_num_apli
+   AND   a.tip_benef     = l_k_tip_benef_subagente
+   AND   a.num_spto      = (SELECT MAX(b.num_spto)
+                              FROM r2000060 b,
+                                   r2000030 c
+                             WHERE b.cod_cia          = a.cod_cia
+                               AND b.num_poliza       = a.num_poliza
+                               AND b.num_apli         = a.num_apli
+                               AND b.tip_docum        = a.tip_docum
+                               AND b.cod_docum        = a.cod_docum
+                               AND b.tip_benef        = l_k_tip_benef_subagente
+                               AND c.cod_cia          = b.cod_cia
+                               AND c.num_poliza       = b.num_poliza
+                               AND c.num_spto         = b.num_spto
+                               AND c.num_apli         = b.num_apli
+                               AND c.num_spto_apli    = b.num_spto_apli
+                               AND c.fec_efec_spto   <= p_fec_vigencia
+                               AND c.mca_spto_anulado = l_k_no
+                           )
+   AND   a.mca_baja        = 'N'
+ ;
+ --
+ l_reg_subag       l_c_subagentes       %ROWTYPE;
+ --
+ l_cod_tercero     v1001390.COD_TERCERO %TYPE;
+ --
+ p_t_tab_subag     dc_k_a1001337.table_cod_emp_agt;
+ --
+ l_inx             BINARY_INTEGER := trn.CERO;
+ --
+ BEGIN
+   --
+   em_k_g2001801.p_lee ( p_cod_cia   => p_cod_cia,
+                         p_tip_benef => l_k_tip_benef_subagente
+                       );
+   --
+   l_cod_act_tercero := em_k_g2001801.f_cod_act_tercero;
+   --
+   OPEN l_c_subagentes;
+   --
+   LOOP
+      FETCH l_c_subagentes INTO l_reg_subag;
+      --
+      EXIT WHEN l_c_subagentes%NOTFOUND;
+      --
+      dc_k_v1001390.p_lee(p_cod_cia         => p_cod_cia            ,
+                          p_cod_act_tercero => l_cod_act_tercero    ,
+                          p_tip_docum       => l_reg_subag.tip_docum,
+                          p_cod_docum       => l_reg_subag.cod_docum,
+                          p_cod_tercero     => l_k_nulo             );
+      --
+      l_cod_tercero := dc_k_v1001390.f_cod_tercero;
+      --
+      l_inx := l_inx + 1;
+      --
+      p_t_tab_subag(l_inx) := l_cod_tercero;
+      --
+   END LOOP;
+   --
+   CLOSE l_c_subagentes;
+   --
+   RETURN p_t_tab_subag;
+ --
+ END f_tab_subagentes;
+ --
+ /* -----------------------------------------------------
+ || p_devuelve_tip_benef :
+ ||
+ || Devuelve el tipo y codigo de documento de un tipo
+ || de beneficiario. Es utilizado para sabe rel benefi-
+ || ciario de referencia en los batch
+ */ -----------------------------------------------------
+ --
+ PROCEDURE p_devuelve_tip_benef
+                       (p_cod_cia       IN     a2000060.cod_cia      %TYPE,
+                        p_num_poliza    IN     a2000060.num_poliza   %TYPE,
+                        p_num_spto      IN     a2000060.num_spto     %TYPE,
+                        p_num_apli      IN     a2000060.num_apli     %TYPE,
+                        p_num_spto_apli IN     a2000060.num_spto_apli%TYPE,
+                        p_tip_benef     IN     a2000060.tip_benef    %TYPE,
+                        p_num_riesgo    IN     a2000060.num_riesgo   %TYPE,
+                        p_tip_docum     IN OUT a2000060.tip_docum    %TYPE,
+                        p_cod_docum     IN OUT a2000060.cod_docum    %TYPE) IS
+  --
+  CURSOR c_r2000060 IS
+         SELECT tip_docum,
+                cod_docum
+           FROM r2000060
+          WHERE cod_cia       = p_cod_cia
+            AND num_poliza    = p_num_poliza
+            AND num_spto      = p_num_spto
+            AND num_apli      = p_num_apli
+            AND num_spto_apli = p_num_spto_apli
+            AND tip_benef     = p_tip_benef
+            AND num_riesgo    = p_num_riesgo
+            AND mca_vigente   = 'S';
+  --
+ BEGIN
+  --
+  OPEN  c_r2000060;
+  FETCH c_r2000060 INTO p_tip_docum,
+                        p_cod_docum;
+  CLOSE c_r2000060;
+  --
+ END p_devuelve_tip_benef;
+ --
+ /* -----------------------------------------------------
+ || p_inserta :
+ ||
+ || inserta el registro en la tabla r2000060
+ */ -----------------------------------------------------
+ --
+ PROCEDURE p_inserta(p_reg r2000060%ROWTYPE) IS
+ --
+ BEGIN
+    --
+    INSERT INTO r2000060
+         (cod_cia          ,
+          num_poliza       ,
+          num_spto         ,
+          num_apli         ,
+          num_spto_apli    ,
+          num_riesgo       ,
+          tip_benef        ,
+          num_secu         ,
+          tip_docum        ,
+          cod_docum        ,
+          mca_principal    ,
+          mca_calculo      ,
+          mca_baja         ,
+          mca_vigente      ,
+          pct_participacion,
+          fec_vcto_cesion  ,
+          imp_cesion       ,
+          num_prestamo     ,
+          tip_relac
+         )
+    VALUES
+         (p_reg.cod_cia          ,
+          p_reg.num_poliza       ,
+          p_reg.num_spto         ,
+          p_reg.num_apli         ,
+          p_reg.num_spto_apli    ,
+          p_reg.num_riesgo       ,
+          p_reg.tip_benef        ,
+          p_reg.num_secu         ,
+          p_reg.tip_docum        ,
+          p_reg.cod_docum        ,
+          p_reg.mca_principal    ,
+          p_reg.mca_calculo      ,
+          p_reg.mca_baja         ,
+          p_reg.mca_vigente      ,
+          p_reg.pct_participacion,
+          p_reg.fec_vcto_cesion  ,
+          p_reg.imp_cesion       ,
+          p_reg.num_prestamo     ,
+          p_reg.tip_relac
+         );
+  --
+ END p_inserta;
+ --
+ /*------------------------------------------------------
+ || f_tab_benef_riesgo:
+ || Devuelve los intervinientes con un tipo tip_benef especifico
+ */ -----------------------------------------------------
+ --
+ FUNCTION f_tab_benef_riesgo (p_cod_cia      r2000060.cod_cia       %TYPE,
+                              p_num_poliza   r2000060.num_poliza    %TYPE,
+                              p_num_riesgo   r2000060.num_riesgo    %TYPE,
+                              p_tip_benef    r2000060.tip_benef     %TYPE,
+                              p_num_apli     r2000030.num_apli      %TYPE,
+                              p_fec_vigencia r2000030.fec_efec_spto %TYPE)
+          RETURN t_benef IS
+    --
+    l_t_benef  t_benef;
+    --
+ BEGIN
+    --
+    SELECT a.cod_cia          ,
+           a.num_poliza       ,
+           a.num_spto         ,
+           a.num_apli         ,
+           a.num_spto_apli    ,
+           a.num_riesgo       ,
+           a.tip_benef        ,
+           a.num_secu         ,
+           a.tip_docum        ,
+           a.cod_docum        ,
+           a.mca_principal    ,
+           a.mca_calculo      ,
+           a.mca_baja         ,
+           a.mca_vigente      ,
+           a.pct_participacion,
+           a.fec_vcto_cesion  ,
+           a.imp_cesion       ,
+           a.num_prestamo     ,
+           a.tip_relac
+      BULK COLLECT INTO l_t_benef
+      FROM r2000060 a
+     WHERE a.cod_cia    = p_cod_cia
+       AND a.num_poliza = p_num_poliza
+       AND a.num_apli   = p_num_apli
+       AND a.num_riesgo = p_num_riesgo
+       AND a.tip_benef  = p_tip_benef
+       AND a.num_spto   = (SELECT MAX(b.num_spto)
+                             FROM r2000060 b,
+                                  r2000030 c
+                            WHERE b.cod_cia          = a.cod_cia
+                              AND b.num_poliza       = a.num_poliza
+                              AND b.num_apli         = a.num_apli
+                              AND b.num_riesgo       = a.num_riesgo
+                              AND b.tip_docum        = a.tip_docum
+                              AND b.cod_docum        = a.cod_docum
+                              AND b.tip_benef        = p_tip_benef
+                              AND c.cod_cia          = b.cod_cia
+                              AND c.num_poliza       = b.num_poliza
+                              AND c.num_spto         = b.num_spto
+                              AND c.num_apli         = b.num_apli
+                              AND c.num_spto_apli    = b.num_spto_apli
+                              AND c.fec_efec_spto   <= p_fec_vigencia
+                              AND c.mca_spto_anulado = trn.NO
+                          )
+       AND a.mca_baja   = trn.NO;
+    --
+    RETURN l_t_benef;
+    --
+ END f_tab_benef_riesgo;
+ --
+END em_k_r2000060_trn;
+/

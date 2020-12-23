@@ -1,0 +1,1 @@
+DROP PACKAGE TRON2000.dc_k_ptd_thp;

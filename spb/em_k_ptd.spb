@@ -1,0 +1,279 @@
+CREATE OR REPLACE PACKAGE BODY TRON2000.EM_K_PTD AS
+ --
+ /* -------------------- VERSION = 1.01 -------------------- */
+ --
+ /* -------------------- MODIFICACIONES --------------------
+ || 2020/11/11 - HSOLIVE - 1.01
+ ||
+ || Se crea el método que devuelve el tipo de emision. Anteriormente estaba
+ || en em_k_ptd_gni
+ */ --------------------------------------------------------
+ --
+ /* --------------------------------------------------
+ || Aqui comienza la declaracion de variables GLOBALES
+ */ --------------------------------------------------
+ --
+ --
+ /* ---------------------------------------------------
+ || Aqui comienza la declaracion de constantes GLOBALES
+ */ ---------------------------------------------------
+ --
+ g_k_fmt_f CONSTANT VARCHAR2(8) := 'ddmmyyyy';
+ --
+ /* ----------------------------------------------------
+ || Aqui comienza la declaracion de subprogramas LOCALES
+ */ ----------------------------------------------------
+ --
+ /* -----------------------------------------------------
+ || pp_asigna:
+ ||
+ || Llama a trn_k_global.asigna
+ */ -----------------------------------------------------
+ --
+ PROCEDURE pp_asigna(p_nom_global VARCHAR2,
+                     p_val_global VARCHAR2)
+ IS
+ BEGIN
+    --
+    trn_k_global.asigna(p_nom_global,p_val_global);
+    --
+ END pp_asigna;
+ --
+ --
+ /* -----------------------------------------------------
+ || pp_asigna:
+ ||
+ || Llama a trn_k_global.asigna
+ */ -----------------------------------------------------
+ --
+ PROCEDURE pp_asigna(p_nom_global VARCHAR2,
+                     p_val_global NUMBER  ) 
+ IS
+ BEGIN
+    --
+    trn_k_global.asigna(p_nom_global,TO_CHAR(p_val_global));
+    --
+ END pp_asigna;
+ --
+ --
+ /* -----------------------------------------------------
+ || pp_asigna:
+ ||
+ || Llama a trn_k_global.asigna
+ */ -----------------------------------------------------
+ --
+ PROCEDURE pp_asigna(p_nom_global VARCHAR2,
+                     p_val_global DATE    ) 
+ IS
+ BEGIN
+    --
+    trn_k_global.asigna(p_nom_global,TO_CHAR(p_val_global,g_k_fmt_f));
+    --
+ END pp_asigna;
+ --
+ --
+ /* -----------------------------------------------------
+ || fp_devuelve_c:
+ ||
+ || Llama a trn_k_global.devuelve y retorna como VARCHAR2
+ */ -----------------------------------------------------
+ --
+ FUNCTION fp_devuelve_c(p_nom_global VARCHAR2) 
+          RETURN VARCHAR2 IS
+ BEGIN
+    --
+    RETURN trn_k_global.devuelve(p_nom_global);
+    --
+ END fp_devuelve_c;
+ --
+ --
+ /* -----------------------------------------------------
+ || fp_devuelve_n:
+ ||
+ || Llama a trn_k_global.devuelve y retorna como NUMBER
+ */ -----------------------------------------------------
+ --
+ FUNCTION fp_devuelve_n(p_nom_global VARCHAR2) 
+          RETURN NUMBER IS
+ BEGIN
+    --
+    RETURN TO_NUMBER(trn_k_global.devuelve(p_nom_global));
+     --
+ END fp_devuelve_n;
+ --
+ --
+ /* -----------------------------------------------------
+ || fp_devuelve_f:
+ ||
+ || Llama a trn_k_global.devuelve y retorna como DATE
+ */ -----------------------------------------------------
+ --
+ FUNCTION fp_devuelve_f(p_nom_global VARCHAR2) 
+          RETURN DATE IS
+ BEGIN
+    --
+    RETURN TO_DATE(trn_k_global.devuelve(p_nom_global),g_k_fmt_f);
+    --
+ END fp_devuelve_f;
+ --
+ --
+ /* --------------------------------------------------------
+ || Aqui comienza la declaracion de subprogramas del PACKAGE
+ */ --------------------------------------------------------
+ --           
+ --
+ /* -----------------------------------------------------
+ || f_dev_num_dias_vcto_pago:
+ ||
+ || Devuelve el numero de dias de vencimiento
+ */ -----------------------------------------------------
+ --
+ FUNCTION f_dev_num_dias_vcto_pago 
+          RETURN g2000500.num_dias_vcto_pago%TYPE IS
+ BEGIN
+    --
+    RETURN fp_devuelve_n('num_dias_vcto_pago');
+    --
+ END f_dev_num_dias_vcto_pago;    
+ --
+ --
+ -- No estan en excel de pendientes y se llaman desde em_k_ptd_atr
+ --
+ /* -----------------------------------------------------
+ || f_dev_cod_nivel_salto:
+ ||
+ || Devuelve el lugar donde se produce el error
+ */ -----------------------------------------------------
+ --
+ FUNCTION f_dev_cod_nivel_salto 
+          RETURN x2000221.cod_nivel_salto%TYPE IS
+ BEGIN
+    --
+    RETURN fp_devuelve_c('cod_nivel_salto');
+    --
+ END f_dev_cod_nivel_salto;  
+ --
+ --
+ /* -----------------------------------------------------
+ || f_dev_num_menu_opcion:
+ ||
+ || Devuelve el  numero del menu de opciones dentro de un programa (cod_pgm)
+ */ -----------------------------------------------------   
+ --
+ FUNCTION f_dev_num_menu_opcion 
+          RETURN x2000221.num_menu_opcion%TYPE IS
+ BEGIN                                        
+    --  
+    RETURN fp_devuelve_n('num_menu_opcion');
+    --
+ END f_dev_num_menu_opcion;        
+ --
+ --                                                        
+ /* -----------------------------------------------------
+ || f_dev_num_opcion:
+ ||
+ || Devuelve el numero de opcion del menu del programa
+ */ -----------------------------------------------------
+ --
+ FUNCTION f_dev_num_opcion 
+          RETURN x2000221.num_opcion%TYPE IS
+ BEGIN
+    --
+    RETURN fp_devuelve_n('num_opcion');
+    --
+ END f_dev_num_opcion;    
+ --
+ -- 
+ /* --------------------------------------------------------
+ || f_dev_row_val_val :
+ ||
+ || Devuelve el valor de la fila de la tabla de conceptos
+ */ --------------------------------------------------------
+ --
+ FUNCTION f_dev_row_val_val(p_vrb_nam df_cmn_nwt_xx_vrb_cnc.vrb_nam%TYPE,
+                            p_row_val df_cmn_nwt_xx_vrb_cnc.row_val%TYPE)
+          RETURN df_cmn_nwt_xx_vrb_cnc.row_val_val%TYPE IS
+ BEGIN
+    --
+    RETURN trn_k_df_cmn_nwt_xx_vrb_cnc.f_row_val_val(p_vrb_nam => p_vrb_nam ,
+                                                     p_row_val => p_row_val );
+    --
+ END f_dev_row_val_val;
+ --
+ --
+ /* --------------------------------------------------------
+ || f_dev_tip_mvto_batch:
+ ||
+ || Devuelve la operacion batch
+ */ --------------------------------------------------------
+ --
+ FUNCTION f_dev_tip_mvto_batch 
+          RETURN a2000520.tip_mvto_batch%TYPE IS
+ BEGIN
+    --
+    RETURN fp_devuelve_c('tip_mvto_batch');
+    --
+ END f_dev_tip_mvto_batch;    
+ --
+ --
+ /* -----------------------------------------------------
+ || f_dev_tip_emision:
+ ||
+ || Devuelve el tipo de emision
+ */ -----------------------------------------------------
+ --
+ FUNCTION f_dev_tip_emision         
+          RETURN x2000030.tip_emision%TYPE IS
+ BEGIN
+    --
+    RETURN fp_devuelve_c('tip_emision');
+    --
+ END f_dev_tip_emision;
+ --
+ --
+ /* -----------------------------------------------------
+ || p_asg_mca_cambio_num_poliza:
+ ||
+ || Asignar el valor a la marca mca_cambio_num_poliza
+ */ ----------------------------------------------------- 
+ --
+ PROCEDURE p_asg_mca_cambio_num_poliza(p_mca_cambio_num_poliza IN a1001800.mca_cambio_num_poliza%TYPE)
+ IS
+ BEGIN
+    --
+    pp_asigna('mca_cambio_num_poliza ', p_mca_cambio_num_poliza);
+    --
+ END p_asg_mca_cambio_num_poliza;
+ --
+ --
+ /* -----------------------------------------------------
+ || p_asg_mca_autoriza:
+ ||
+ || Asignar el valor a la marca mca_autoriza
+ */ -----------------------------------------------------  
+ --
+ PROCEDURE p_asg_mca_autoriza(p_mca_autoriza IN a7006000.mca_autoriza%TYPE)
+ IS
+ BEGIN
+    --
+    pp_asigna('mca_autoriza', p_mca_autoriza);
+    --
+ END p_asg_mca_autoriza;    
+ --
+ --
+ /* -----------------------------------------------------
+ || p_asg_num_dias_vcto_pago :
+ ||
+ || Asignar el valor al atributo num_dias_vcto_pago
+ */ ----------------------------------------------------- 
+ --
+ PROCEDURE p_asg_num_dias_vcto_pago(p_num_dias_vcto_pago IN g2000500.num_dias_vcto_pago%TYPE) 
+ IS
+ BEGIN
+    --
+    pp_asigna('num_dias_vcto_pago', p_num_dias_vcto_pago);
+    --
+ END;
+ --
+END em_k_ptd;
+/

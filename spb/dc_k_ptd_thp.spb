@@ -1,0 +1,913 @@
+CREATE OR REPLACE PACKAGE BODY TRON2000.DC_K_PTD_THP AS
+ --
+ /* -------------------- VERSION = 1.05 -------------------- */
+ --
+ /* -------------------- MODIFICACIONES --------------------
+ || 2020/11/25 - hsolive - 1.01
+ ||
+ || Modificacion del nombre del metodo f_con_datos_asegurado 
+ || para incluir la inicializacion de las globales de ptd que 
+ || se realiza a traves del metodo pp_ini_globales_ptd_aseg
+ || Modificacion del nombre del metodo f_con_datos_fijos
+ || para incluir la inicializacion de las globales de ptd
+ || que se realiza a traves del metodo pp_ini_globales_ptd_df
+ || Inclusion de metodos de devolucion de las globales ptd_tip_docum
+ || ptd_cod_docum
+ || --
+ || 2020/12/03 - hsolive - 1.02
+ || Inclusion metodo que devuelve ptd_cod_prov y ptd_cod_estado
+ || --
+ || 2020/12/03 - hsolive - 1.03
+ || Inclusion metodo para inicializar las globales de ptd asociadas
+ || a los datos fijos del tercero p_ini_globales_ptd_df
+ || Inclusion metodo para inicializar las globales de ptd asociadas
+ || al asegurado p_ini_globales_ptd_aseg
+ || --
+ || 2020/12/04 - hsolive - 1.04
+ || Inclusion metodo para devolver el pais del tercero. f_dev_ptd_cod_pais
+ || La global ptd_cod_pais se ha incoporado el metodo de asignacion de 
+ || globales y de inicializacion de las mismas
+ || --
+ || 2020/12/10 - hsolive - 1.05
+ || Inclusion metodo para devolver la fecha del carnet de conducir. f_dev_ptd_fec_carnet_con
+ || Modificacion del metodo de inicializacion de globales asociado al asegurado 
+ || (p_ini_globales_ptd_aseg) y asignacion de globales asociado al asegurado 
+ || (pp_asigna_globales_ptd_aseg) para incluir la global de ptd que almacenara la 
+ || informacion de la fecha del carnet de conducir (ptd_fec_carnet_con)
+ */ --------------------------------------------------------
+ --
+ /* --------------------------------------------------
+ || Aqui comienza la declaracion de variables GLOBALES
+ */ --------------------------------------------------
+ --
+ --
+ /* ---------------------------------------------------
+ || Aqui comienza la declaracion de constantes GLOBALES
+ */ ---------------------------------------------------
+ --
+ g_k_fmt_f CONSTANT VARCHAR2(8) := 'ddmmyyyy';
+ --
+ g_k_nom_prg CONSTANT VARCHAR2(12):='dc_k_ptd_thp';
+ --
+ /* ----------------------------------------------------
+ || Aqui comienza la declaracion de subprogramas LOCALES
+ */ ----------------------------------------------------
+ --
+ --
+ /* -----------------------------------------------------
+ || pp_asigna:
+ ||
+ || Llama a trn_k_global.asigna
+ */ -----------------------------------------------------
+ --
+ PROCEDURE pp_asigna(p_nom_global VARCHAR2,
+                     p_val_global VARCHAR2)
+ IS
+ BEGIN
+    --
+    trn_k_global.asigna(p_nom_global,p_val_global);
+    --
+ END pp_asigna;
+ --
+ --
+ /* -----------------------------------------------------
+ || pp_asigna:
+ ||
+ || Llama a trn_k_global.asigna
+ */ -----------------------------------------------------
+ --
+ PROCEDURE pp_asigna(p_nom_global VARCHAR2,
+                     p_val_global NUMBER  )
+ IS
+ BEGIN
+    --
+    trn_k_global.asigna(p_nom_global,TO_CHAR(p_val_global));
+    --
+ END pp_asigna;
+ --
+ --
+ /* -----------------------------------------------------
+ || pp_asigna:
+ ||
+ || Llama a trn_k_global.asigna
+ */ -----------------------------------------------------
+ --
+ PROCEDURE pp_asigna(p_nom_global VARCHAR2,
+                     p_val_global DATE    )
+ IS
+ BEGIN
+    --
+    trn_k_global.asigna(p_nom_global,TO_CHAR(p_val_global,g_k_fmt_f));
+    --
+ END pp_asigna;
+ --
+ /* -----------------------------------------------------
+ || p_ini_globales_ptd_df:
+ ||
+ || Metodo que asigna a globales ptd información de los 
+ || datos fijos de terceros
+ */ -----------------------------------------------------
+ --
+ PROCEDURE p_ini_globales_ptd_df
+ IS
+ BEGIN
+    --
+    pp_asigna(p_nom_global => 'ptd_mca_fisico',
+              p_val_global => trn.NULO        );
+    --
+ END p_ini_globales_ptd_df;
+ --
+ --
+ /* -----------------------------------------------------
+ || p_ini_globales_ptd_aseg:
+ ||
+ || Metodo que inicializa las globales ptd información de los 
+ || datos del asegurado
+ */ -----------------------------------------------------
+ --
+ PROCEDURE p_ini_globales_ptd_aseg
+ IS
+ BEGIN
+    --
+    pp_asigna(p_nom_global => 'ptd_mca_sexo',
+              p_val_global => trn.NULO      );
+    --
+    pp_asigna(p_nom_global => 'ptd_fec_nacimiento',
+              p_val_global => trn.NULO            );
+    --
+    pp_asigna(p_nom_global => 'ptd_cod_postal',
+              p_val_global => trn.NULO        );
+    --
+    pp_asigna(p_nom_global => 'ptd_tip_docum',
+              p_val_global => trn.NULO       );
+    --
+    pp_asigna(p_nom_global => 'ptd_cod_docum',
+              p_val_global => trn.NULO       );
+    --
+    pp_asigna(p_nom_global => 'ptd_cod_prov',
+              p_val_global => trn.NULO      );
+    --
+    pp_asigna(p_nom_global => 'ptd_cod_estado',
+              p_val_global => trn.NULO        );
+    --
+    pp_asigna(p_nom_global => 'ptd_cod_pais',
+              p_val_global => trn.NULO      );
+    --
+    pp_asigna(p_nom_global => 'ptd_fec_carnet_con',
+              p_val_global => trn.NULO            );
+    --
+ END p_ini_globales_ptd_aseg;
+ --
+ --
+ /* -----------------------------------------------------
+ || pp_asigna_globales_ptd_df:
+ ||
+ || Metodo que inicializa las globales ptd información de los 
+ || datos fijos de terceros
+ */ -----------------------------------------------------
+ --
+ PROCEDURE pp_asigna_globales_ptd_df(p_reg datos_fijos_tercero)
+ IS
+ BEGIN
+    --
+    pp_asigna(p_nom_global => 'ptd_mca_fisico',
+              p_val_global => p_reg.mca_fisico);
+    --
+ END pp_asigna_globales_ptd_df;
+ --
+ --
+ /* -----------------------------------------------------
+ || pp_asigna_globales_ptd_aseg:
+ ||
+ || Metodo que asigna a globales ptd información del asegurado
+ */ -----------------------------------------------------
+ --
+ PROCEDURE pp_asigna_globales_ptd_aseg(p_reg record_tercero)
+ IS
+ BEGIN
+    --
+    pp_asigna(p_nom_global => 'ptd_mca_sexo',
+              p_val_global => p_reg.mca_sexo);
+    --
+    pp_asigna(p_nom_global => 'ptd_fec_nacimiento',
+              p_val_global => p_reg.fec_nacimiento);
+    --
+    pp_asigna(p_nom_global => 'ptd_cod_postal',
+              p_val_global => p_reg.cod_postal);
+    --
+    pp_asigna(p_nom_global => 'ptd_tip_docum',
+              p_val_global => p_reg.tip_docum);
+    --
+    pp_asigna(p_nom_global => 'ptd_cod_docum',
+              p_val_global => p_reg.cod_docum);
+    --
+    pp_asigna(p_nom_global => 'ptd_cod_prov',
+              p_val_global => p_reg.cod_prov);
+    --
+    pp_asigna(p_nom_global => 'ptd_cod_estado',
+              p_val_global => p_reg.cod_estado);
+    --
+    pp_asigna(p_nom_global => 'ptd_cod_pais',
+              p_val_global => p_reg.cod_pais);
+    --
+    pp_asigna(p_nom_global => 'ptd_fec_carnet_con',
+              p_val_global => p_reg.fec_carnet_con);
+    --          
+ END pp_asigna_globales_ptd_aseg;
+ --
+ --
+ /* -----------------------------------------------------
+ || fp_devuelve_c:
+ ||
+ || Llama a trn_k_global.devuelve y retorna como VARCHAR2
+ */ -----------------------------------------------------
+ --
+ FUNCTION fp_devuelve_c(p_nom_global VARCHAR2)
+          RETURN VARCHAR2 IS
+ BEGIN
+    --
+    RETURN trn_k_global.devuelve(p_nom_global);
+    --
+ END fp_devuelve_c;
+ --
+ --
+ /* -----------------------------------------------------
+ || fp_devuelve_n:
+ ||
+ || Llama a trn_k_global.devuelve y retorna como NUMBER
+ */ -----------------------------------------------------
+ --
+ FUNCTION fp_devuelve_n(p_nom_global VARCHAR2)
+          RETURN NUMBER IS
+ BEGIN
+    --
+    RETURN TO_NUMBER(trn_k_global.devuelve(p_nom_global));
+    --
+ END fp_devuelve_n;
+ --
+ --
+ /* -----------------------------------------------------
+ || fp_devuelve_f:
+ ||
+ || Llama a trn_k_global.devuelve y retorna como DATE
+ */ -----------------------------------------------------
+ --
+ FUNCTION fp_devuelve_f(p_nom_global VARCHAR2)
+          RETURN DATE IS
+ BEGIN
+    --
+    RETURN TO_DATE(trn_k_global.devuelve(p_nom_global),g_k_fmt_f);
+    --
+ END fp_devuelve_f;
+ --
+ /* -----------------------------------------------------
+ || fp_dev_reg_a1001331:
+ ||
+ || Devuelve un registro de la tabla a1001331
+ */ -----------------------------------------------------
+ --
+ FUNCTION fp_dev_reg_a1001331(p_cod_cia   a1001331.cod_cia  %TYPE,
+                              p_tip_docum a1001331.tip_docum%TYPE,
+                              p_cod_docum a1001331.cod_docum%TYPE)  
+          RETURN record_tercero IS
+ --
+ l_reg_informacion_tercero record_tercero;
+ --
+ l_reg a1001331%ROWTYPE;
+ --
+ BEGIN
+    --
+    l_reg := dc_k_a1001331.f_devuelve_reg;
+    --
+    l_reg_informacion_tercero.cod_cia                        := l_reg.cod_cia                       ;
+    l_reg_informacion_tercero.tip_docum                      := l_reg.tip_docum                     ;
+    l_reg_informacion_tercero.cod_docum                      := l_reg.cod_docum                     ;
+    l_reg_informacion_tercero.cod_act_tercero                := l_reg.cod_act_tercero               ;
+    l_reg_informacion_tercero.tip_nacionalidad               := l_reg.tip_nacionalidad              ;
+    l_reg_informacion_tercero.cod_nacionalidad               := l_reg.cod_nacionalidad              ;
+    l_reg_informacion_tercero.tip_domicilio                  := l_reg.tip_domicilio                 ;
+    l_reg_informacion_tercero.nom_domicilio1                 := l_reg.nom_domicilio1                ;
+    l_reg_informacion_tercero.nom_domicilio2                 := l_reg.nom_domicilio2                ;
+    l_reg_informacion_tercero.nom_domicilio3                 := l_reg.nom_domicilio3                ;
+    l_reg_informacion_tercero.nom_localidad                  := l_reg.nom_localidad                 ;
+    l_reg_informacion_tercero.cod_pais                       := l_reg.cod_pais                      ;
+    l_reg_informacion_tercero.cod_prov                       := l_reg.cod_prov                      ;
+    l_reg_informacion_tercero.cod_postal                     := l_reg.cod_postal                    ;
+    l_reg_informacion_tercero.num_apartado                   := l_reg.num_apartado                  ;
+    l_reg_informacion_tercero.tlf_pais                       := l_reg.tlf_pais                      ;
+    l_reg_informacion_tercero.tlf_zona                       := l_reg.tlf_zona                      ;
+    l_reg_informacion_tercero.tlf_numero                     := l_reg.tlf_numero                    ;
+    l_reg_informacion_tercero.fax_numero                     := l_reg.fax_numero                    ;
+    l_reg_informacion_tercero.email                          := l_reg.email                         ;
+    l_reg_informacion_tercero.tip_domicilio_com              := l_reg.tip_domicilio_com             ;
+    l_reg_informacion_tercero.nom_domicilio1_com             := l_reg.nom_domicilio1_com            ;
+    l_reg_informacion_tercero.nom_domicilio2_com             := l_reg.nom_domicilio2_com            ;
+    l_reg_informacion_tercero.nom_domicilio3_com             := l_reg.nom_domicilio3_com            ;
+    l_reg_informacion_tercero.nom_localidad_com              := l_reg.nom_localidad_com             ;
+    l_reg_informacion_tercero.cod_pais_com                   := l_reg.cod_pais_com                  ;
+    l_reg_informacion_tercero.cod_prov_com                   := l_reg.cod_prov_com                  ;
+    l_reg_informacion_tercero.cod_postal_com                 := l_reg.cod_postal_com                ;
+    l_reg_informacion_tercero.tlf_pais_com                   := l_reg.tlf_pais_com                  ;
+    l_reg_informacion_tercero.tlf_zona_com                   := l_reg.tlf_zona_com                  ;
+    l_reg_informacion_tercero.tlf_numero_com                 := l_reg.tlf_numero_com                ;
+    l_reg_informacion_tercero.fax_numero_com                 := l_reg.fax_numero_com                ;
+    l_reg_informacion_tercero.email_com                      := l_reg.email_com                     ;
+    l_reg_informacion_tercero.txt_etiqueta1                  := l_reg.txt_etiqueta1                 ;
+    l_reg_informacion_tercero.txt_etiqueta2                  := l_reg.txt_etiqueta2                 ;
+    l_reg_informacion_tercero.txt_etiqueta3                  := l_reg.txt_etiqueta3                 ;
+    l_reg_informacion_tercero.txt_etiqueta4                  := l_reg.txt_etiqueta4                 ;
+    l_reg_informacion_tercero.txt_etiqueta5                  := l_reg.txt_etiqueta5                 ;
+    l_reg_informacion_tercero.nom_contacto                   := l_reg.nom_contacto                  ;
+    l_reg_informacion_tercero.tip_cargo                      := l_reg.tip_cargo                     ;
+    l_reg_informacion_tercero.tip_act_economica              := l_reg.tip_act_economica             ;
+    l_reg_informacion_tercero.cod_entidad                    := l_reg.cod_entidad                   ;
+    l_reg_informacion_tercero.cod_oficina                    := l_reg.cod_oficina                   ;
+    l_reg_informacion_tercero.cta_cte                        := l_reg.cta_cte                       ;
+    l_reg_informacion_tercero.cta_dc                         := l_reg.cta_dc                        ;
+    l_reg_informacion_tercero.fec_nacimiento                 := l_reg.fec_nacimiento                ;
+    l_reg_informacion_tercero.fec_carnet_con                 := l_reg.fec_carnet_con                ;
+    l_reg_informacion_tercero.cod_ocupacion                  := l_reg.cod_ocupacion                 ;
+    l_reg_informacion_tercero.cod_est_civil                  := l_reg.cod_est_civil                 ;
+    l_reg_informacion_tercero.cod_profesion                  := l_reg.cod_profesion                 ;
+    l_reg_informacion_tercero.mca_sexo                       := l_reg.mca_sexo                      ;
+    l_reg_informacion_tercero.cod_calidad                    := l_reg.cod_calidad                   ;
+    l_reg_informacion_tercero.cod_idioma                     := l_reg.cod_idioma                    ;
+    l_reg_informacion_tercero.obs_asegurado                  := l_reg.obs_asegurado                 ;
+    l_reg_informacion_tercero.cod_grp_tercero                := l_reg.cod_grp_tercero               ;
+    l_reg_informacion_tercero.txt_aux1                       := l_reg.txt_aux1                      ;
+    l_reg_informacion_tercero.txt_aux2                       := l_reg.txt_aux2                      ;
+    l_reg_informacion_tercero.txt_aux3                       := l_reg.txt_aux3                      ;
+    l_reg_informacion_tercero.txt_aux4                       := l_reg.txt_aux4                      ;
+    l_reg_informacion_tercero.txt_aux5                       := l_reg.txt_aux5                      ;
+    l_reg_informacion_tercero.txt_aux6                       := l_reg.txt_aux6                      ;
+    l_reg_informacion_tercero.txt_aux7                       := l_reg.txt_aux7                      ;
+    l_reg_informacion_tercero.txt_aux8                       := l_reg.txt_aux8                      ;
+    l_reg_informacion_tercero.txt_aux9                       := l_reg.txt_aux9                      ;
+    l_reg_informacion_tercero.cod_usr                        := l_reg.cod_usr                       ;
+    l_reg_informacion_tercero.fec_actu                       := l_reg.fec_actu                      ;
+    l_reg_informacion_tercero.tlf_movil                      := l_reg.tlf_movil                     ;
+    l_reg_informacion_tercero.num_busca                      := l_reg.num_busca                     ;
+    l_reg_informacion_tercero.tip_etiqueta                   := l_reg.tip_etiqueta                  ;
+    l_reg_informacion_tercero.cod_estado                     := l_reg.cod_estado                    ;
+    l_reg_informacion_tercero.cod_estado_com                 := l_reg.cod_estado_com                ;
+    l_reg_informacion_tercero.txt_email                      := l_reg.txt_email                     ;
+    l_reg_informacion_tercero.num_apartado_com               := l_reg.num_apartado_com              ;
+    l_reg_informacion_tercero.cod_pais_etiqueta              := l_reg.cod_pais_etiqueta             ;
+    l_reg_informacion_tercero.cod_estado_etiqueta            := l_reg.cod_estado_etiqueta           ;
+    l_reg_informacion_tercero.cod_prov_etiqueta              := l_reg.cod_prov_etiqueta             ;
+    l_reg_informacion_tercero.cod_postal_etiqueta            := l_reg.cod_postal_etiqueta           ;
+    l_reg_informacion_tercero.num_apartado_etiqueta          := l_reg.num_apartado_etiqueta         ;
+    l_reg_informacion_tercero.cod_localidad                  := l_reg.cod_localidad                 ;
+    l_reg_informacion_tercero.tip_tarjeta                    := l_reg.tip_tarjeta                   ;
+    l_reg_informacion_tercero.cod_tarjeta                    := l_reg.cod_tarjeta                   ;
+    l_reg_informacion_tercero.num_tarjeta                    := l_reg.num_tarjeta                   ;
+    l_reg_informacion_tercero.cod_localidad_com              := l_reg.cod_localidad_com             ;
+    l_reg_informacion_tercero.cod_localidad_etiqueta         := l_reg.cod_localidad_etiqueta        ;
+    l_reg_informacion_tercero.nom_localidad_etiqueta         := l_reg.nom_localidad_etiqueta        ;
+    l_reg_informacion_tercero.fec_vcto_tarjeta               := l_reg.fec_vcto_tarjeta              ;
+    l_reg_informacion_tercero.cod_compensacion               := l_reg.cod_compensacion              ;
+    l_reg_informacion_tercero.cod_clase_benef                := l_reg.cod_clase_benef               ;
+    l_reg_informacion_tercero.cod_causa_inh_trc              := l_reg.cod_causa_inh_trc             ;
+    l_reg_informacion_tercero.mca_inh                        := l_reg.mca_inh                       ;
+    l_reg_informacion_tercero.num_carnet_con                 := l_reg.num_carnet_con                ;
+    l_reg_informacion_tercero.cod_situ_carnet_con            := l_reg.cod_situ_carnet_con           ;
+    l_reg_informacion_tercero.atr_domicilio1                 := l_reg.atr_domicilio1                ;
+    l_reg_informacion_tercero.atr_domicilio2                 := l_reg.atr_domicilio2                ;
+    l_reg_informacion_tercero.atr_domicilio3                 := l_reg.atr_domicilio3                ;
+    l_reg_informacion_tercero.atr_domicilio4                 := l_reg.atr_domicilio4                ;
+    l_reg_informacion_tercero.atr_domicilio5                 := l_reg.atr_domicilio5                ;
+    l_reg_informacion_tercero.anx_domicilio                  := l_reg.anx_domicilio                 ;
+    l_reg_informacion_tercero.ext_cod_postal                 := l_reg.ext_cod_postal                ;
+    l_reg_informacion_tercero.tlf_extension                  := l_reg.tlf_extension                 ;
+    l_reg_informacion_tercero.nom_empresa_com                := l_reg.nom_empresa_com               ;
+    l_reg_informacion_tercero.atr_domicilio1_com             := l_reg.atr_domicilio1_com            ;
+    l_reg_informacion_tercero.atr_domicilio2_com             := l_reg.atr_domicilio2_com            ;
+    l_reg_informacion_tercero.atr_domicilio3_com             := l_reg.atr_domicilio3_com            ;
+    l_reg_informacion_tercero.atr_domicilio4_com             := l_reg.atr_domicilio4_com            ;
+    l_reg_informacion_tercero.atr_domicilio5_com             := l_reg.atr_domicilio5_com            ;
+    l_reg_informacion_tercero.anx_domicilio_com              := l_reg.anx_domicilio_com             ;
+    l_reg_informacion_tercero.ext_cod_postal_com             := l_reg.ext_cod_postal_com            ;
+    l_reg_informacion_tercero.tlf_extension_com              := l_reg.tlf_extension_com             ;
+    l_reg_informacion_tercero.ext_cod_postal_etiqueta        := l_reg.ext_cod_postal_etiqueta       ;
+    l_reg_informacion_tercero.cod_exp_carnet_con             := l_reg.cod_exp_carnet_con            ;
+    l_reg_informacion_tercero.nom_titular_cta                := l_reg.nom_titular_cta               ;
+    l_reg_informacion_tercero.apellido_contacto              := l_reg.apellido_contacto             ;
+    l_reg_informacion_tercero.tip_docum_contacto             := l_reg.tip_docum_contacto            ;
+    l_reg_informacion_tercero.cod_docum_contacto             := l_reg.cod_docum_contacto            ;
+    l_reg_informacion_tercero.cod_nacionalidad_contacto      := l_reg.cod_nacionalidad_contacto     ;
+    l_reg_informacion_tercero.num_hijos                      := l_reg.num_hijos                     ;
+    l_reg_informacion_tercero.tip_rating                     := l_reg.tip_rating                    ;
+    l_reg_informacion_tercero.txt_longitud                   := l_reg.txt_longitud                  ;
+    l_reg_informacion_tercero.txt_latitud                    := l_reg.txt_latitud                   ;
+    l_reg_informacion_tercero.cod_nivel3_ref                 := l_reg.cod_nivel3_ref                ;
+    l_reg_informacion_tercero.fec_alta                       := l_reg.fec_alta                      ;
+    l_reg_informacion_tercero.fec_emi_docum                  := l_reg.fec_emi_docum                 ;
+    l_reg_informacion_tercero.fec_caduc_docum                := l_reg.fec_caduc_docum               ;
+    l_reg_informacion_tercero.cod_exp_docum                  := l_reg.cod_exp_docum                 ;
+    l_reg_informacion_tercero.val_zon_exp_lic_con            := l_reg.val_zon_exp_lic_con           ;
+    l_reg_informacion_tercero.mca_robinson                   := l_reg.mca_robinson                  ;
+    l_reg_informacion_tercero.cod_tip_soc                    := l_reg.cod_tip_soc                   ;
+    l_reg_informacion_tercero.tip_docum_representante_legal  := l_reg.tip_docum_representante_legal ;
+    l_reg_informacion_tercero.cod_docum_representante_legal  := l_reg.cod_docum_representante_legal ;
+    l_reg_informacion_tercero.cod_grp_empresarial            := l_reg.cod_grp_empresarial           ;
+    l_reg_informacion_tercero.cod_estudios                   := l_reg.cod_estudios                  ;
+    l_reg_informacion_tercero.cod_titulacion                 := l_reg.cod_titulacion                ;
+    l_reg_informacion_tercero.fec_fallecimiento              := l_reg.fec_fallecimiento             ;
+    l_reg_informacion_tercero.cod_zona_horaria               := l_reg.cod_zona_horaria              ;
+    l_reg_informacion_tercero.mca_vip                        := l_reg.mca_vip                       ;
+    l_reg_informacion_tercero.num_empleados                  := l_reg.num_empleados                 ;
+    l_reg_informacion_tercero.imp_facturacion                := l_reg.imp_facturacion               ;
+    l_reg_informacion_tercero.pct_discapacidad               := l_reg.pct_discapacidad              ;
+    l_reg_informacion_tercero.mca_plan_fidelizacion          := l_reg.mca_plan_fidelizacion         ;
+    l_reg_informacion_tercero.num_pto_plan_fidelizacion      := l_reg.num_pto_plan_fidelizacion     ;
+    l_reg_informacion_tercero.mca_domicilio_comprobado       := l_reg.mca_domicilio_comprobado      ;
+    l_reg_informacion_tercero.mca_domicilio_com_comprobado   := l_reg.mca_domicilio_com_comprobado  ;
+    l_reg_informacion_tercero.mca_domicilio_etiq_comprobado  := l_reg.mca_domicilio_etiq_comprobado ;
+    l_reg_informacion_tercero.txt_latitud_domicilio_com      := l_reg.txt_latitud_domicilio_com     ;
+    l_reg_informacion_tercero.txt_longitud_domicilio_com     := l_reg.txt_longitud_domicilio_com    ;
+    l_reg_informacion_tercero.txt_latitud_domicilio_etiqueta := l_reg.txt_latitud_domicilio_etiqueta;
+    l_reg_informacion_tercero.txt_longitud_domicilio_etiquet := l_reg.txt_longitud_domicilio_etiquet;
+    l_reg_informacion_tercero.mca_tlf_numero_comprobado      := l_reg.mca_tlf_numero_comprobado     ;
+    l_reg_informacion_tercero.mca_fax_numero_comprobado      := l_reg.mca_fax_numero_comprobado     ;
+    l_reg_informacion_tercero.mca_email_comprobado           := l_reg.mca_email_comprobado          ;
+    l_reg_informacion_tercero.mca_tlf_numero_com_comprobado  := l_reg.mca_tlf_numero_com_comprobado ;
+    l_reg_informacion_tercero.mca_fax_numero_com_comprobado  := l_reg.mca_fax_numero_com_comprobado ;
+    l_reg_informacion_tercero.mca_email_com_comprobado       := l_reg.mca_email_com_comprobado      ;
+    l_reg_informacion_tercero.mca_tlf_movil_comprobado       := l_reg.mca_tlf_movil_comprobado      ;
+    l_reg_informacion_tercero.mca_busca_comprobado           := l_reg.mca_busca_comprobado          ;
+    l_reg_informacion_tercero.mca_txt_email_comprobado       := l_reg.mca_txt_email_comprobado      ;
+    --
+    RETURN l_reg_informacion_tercero;
+    --
+ END fp_dev_reg_a1001331;
+ --
+ --
+ /* --------------------------------------------------------
+ || Aqui comienza la declaracion de subprogramas del PACKAGE
+ */ --------------------------------------------------------
+ --
+ --
+ /* -----------------------------------------------------
+ || f_dev_ptd_mca_fisico:
+ ||
+ || Devuelve el valor de la marca fisico del tercero
+ */ -----------------------------------------------------
+ --
+ FUNCTION f_dev_ptd_mca_fisico          
+          RETURN a1001399.mca_fisico%TYPE IS
+ BEGIN
+    --
+    RETURN fp_devuelve_c('ptd_mca_fisico');
+    --
+ END f_dev_ptd_mca_fisico;
+ --
+ --
+ /* -----------------------------------------------------
+ || f_dev_ptd_mca_sexo:
+ ||
+ || Devuelve el valor del sexo del tercero 
+ */ -----------------------------------------------------
+ --
+ FUNCTION f_dev_ptd_mca_sexo          
+          RETURN a1001331.mca_sexo%TYPE IS
+ BEGIN
+    --
+    RETURN fp_devuelve_c('ptd_mca_sexo');
+    --
+ END f_dev_ptd_mca_sexo;
+ --
+ --
+ /* -----------------------------------------------------
+ || f_dev_ptd_fec_nacimiento:
+ ||
+ || Devuelve la fecha de nacimiento del tercero
+ */ -----------------------------------------------------
+ --
+ FUNCTION f_dev_ptd_fec_nacimiento          
+          RETURN a1001331.fec_nacimiento%TYPE IS
+ BEGIN
+    --
+    RETURN fp_devuelve_f('ptd_fec_nacimiento');
+    --
+ END f_dev_ptd_fec_nacimiento;
+ --
+ --
+ /* -----------------------------------------------------
+ || f_dev_ptd_cod_postal:
+ ||
+ || Devuelve el valor del codigo postal del tercero
+ */ -----------------------------------------------------
+ --
+ FUNCTION f_dev_ptd_cod_postal 
+          RETURN a1001331.cod_postal%TYPE IS
+ BEGIN
+    --
+    RETURN fp_devuelve_c('ptd_cod_postal');
+    --
+ END f_dev_ptd_cod_postal;
+ --
+ --
+ /* -----------------------------------------------------
+ || f_dev_ptd_tip_docum:
+ ||
+ || Devuelve el valor del tipo de documento del tercero
+ */ -----------------------------------------------------
+ --
+ FUNCTION f_dev_ptd_tip_docum 
+          RETURN a1001331.tip_docum%TYPE IS
+ BEGIN
+    --
+    RETURN fp_devuelve_c('ptd_tip_docum');
+    --
+ END f_dev_ptd_tip_docum;
+ --
+ --
+ /* -----------------------------------------------------
+ || f_dev_ptd_cod_docum:
+ ||
+ || Devuelve el valor del codigo de documento del tercero
+ */ -----------------------------------------------------
+ --
+ FUNCTION f_dev_ptd_cod_docum 
+          RETURN a1001331.cod_docum%TYPE IS
+ BEGIN
+    --
+    RETURN fp_devuelve_c('ptd_cod_docum');
+    --
+ END f_dev_ptd_cod_docum;
+ -- 
+ --
+ /* -----------------------------------------------------
+ || f_dev_ptd_cod_prov:
+ ||
+ || Devuelve el valor del codigo de la provincia del tercero
+ */ -----------------------------------------------------
+ --
+ FUNCTION f_dev_ptd_cod_prov 
+          RETURN a1001331.cod_prov%TYPE IS
+ BEGIN
+    --
+    RETURN fp_devuelve_n('ptd_cod_prov');
+    --
+ END f_dev_ptd_cod_prov;
+ --
+ --
+ /* -----------------------------------------------------
+ || f_dev_ptd_cod_estado:
+ ||
+ || Devuelve el valor del codigo de la estado del tercero
+ */ -----------------------------------------------------
+ --
+ FUNCTION f_dev_ptd_cod_estado
+          RETURN a1001331.cod_estado%TYPE IS
+ BEGIN
+    --
+    RETURN fp_devuelve_n('ptd_cod_estado');
+    --
+ END f_dev_ptd_cod_estado;
+ --
+ --
+ /* -----------------------------------------------------
+ || f_dev_ptd_cod_pais:
+ ||
+ || Devuelve el valor del codigo de pais del tercero
+ */ -----------------------------------------------------
+ --
+ FUNCTION f_dev_ptd_cod_pais 
+          RETURN a1001331.cod_pais%TYPE IS
+ BEGIN
+    --
+    RETURN fp_devuelve_c('ptd_cod_pais');
+    --
+ END f_dev_ptd_cod_pais;
+ --
+ --
+ /* -----------------------------------------------------
+ || f_dev_ptd_fec_carnet_con:
+ ||
+ || Devuelve el valor de la fecha del carnet de conducir
+ */ -----------------------------------------------------
+ --
+ FUNCTION f_dev_ptd_fec_carnet_con 
+          RETURN a1001331.fec_carnet_con%TYPE IS
+ BEGIN
+    --
+    RETURN fp_devuelve_f('ptd_fec_carnet_con');
+    --
+ END f_dev_ptd_fec_carnet_con;      
+ --
+ --
+ /* -----------------------------------------------------
+ || f_con_datos_fijos_tecero:
+ ||
+ || Devuelve los datos fijos de un tercero
+ */ -----------------------------------------------------
+ --
+  FUNCTION  f_con_datos_fijos_tercero(p_cod_cia      a1001399.cod_cia    %TYPE,
+                                      p_tip_docum    a1001399.tip_docum  %TYPE,
+                                      p_cod_docum    a1001399.cod_docum  %TYPE)
+           RETURN datos_fijos_tercero
+  IS
+  BEGIN
+    --
+    p_ini_globales_ptd_df;
+    --
+    dc_k_a1001399.p_lee (p_cod_cia   => p_cod_cia,
+                         p_tip_docum => p_tip_docum,
+                         p_cod_docum => p_cod_docum);
+    --
+    pp_asigna_globales_ptd_df(p_reg => dc_k_a1001399.f_devuelve_reg); 
+    --
+    RETURN dc_k_a1001399.f_devuelve_reg;
+  --
+  END;
+ --
+ --
+ /* -----------------------------------------------------
+ || f_con_asegurado:
+ ||
+ || Devuelve los datos de un asegurado. Comprueba si tiene datos personalizados para la poliza
+ */ -----------------------------------------------------
+ --
+ FUNCTION f_con_datos_asegurado(p_cod_cia          a1001331.cod_cia          %TYPE,
+                                p_tip_docum        a1001331.tip_docum        %TYPE,
+                                p_cod_docum        a1001331.cod_docum        %TYPE,
+                                p_num_poliza       a1000802.num_poliza       %TYPE,
+                                p_num_spto         a1000802.num_spto         %TYPE,
+                                p_num_riesgo       a1000802.num_riesgo       %TYPE,
+                                p_num_secu_cta_tar a1002201.num_secu_cta_tar %TYPE)
+          RETURN record_tercero
+ IS
+    --
+    l_reg_tercero record_tercero;
+    --
+    l_error EXCEPTION;
+    --
+    PRAGMA EXCEPTION_INIT(l_error,-20001);
+    --
+    l_reg_802 a1000802%ROWTYPE;
+    --
+    l_num_riesgo a1000802.num_riesgo%TYPE;
+    --
+ BEGIN
+    --
+    trn_k_ptd.p_gen_comienzo_traza(p_nom_prg    => g_k_nom_prg            ,
+                                   p_nom_metodo => 'f_con_datos_asegurado');
+    --
+    trn_k_ptd.p_gen_traza_parametro(p_nom_prg       => g_k_nom_prg,
+                                    p_nom_parametro => 'p_cod_cia',
+                                    p_val_parametro => p_cod_cia  );
+    --
+    trn_k_ptd.p_gen_traza_parametro(p_nom_prg       => g_k_nom_prg  ,
+                                    p_nom_parametro => 'p_tip_docum',
+                                    p_val_parametro => p_tip_docum  );
+    --
+    trn_k_ptd.p_gen_traza_parametro(p_nom_prg       => g_k_nom_prg  ,
+                                    p_nom_parametro => 'p_cod_docum',
+                                    p_val_parametro =>  p_cod_docum );
+    --
+    trn_k_ptd.p_gen_traza_parametro(p_nom_prg       => g_k_nom_prg   ,
+                                    p_nom_parametro => 'p_num_poliza',
+                                    p_val_parametro =>  p_num_poliza );  
+    --
+    trn_k_ptd.p_gen_traza_parametro(p_nom_prg       => g_k_nom_prg ,
+                                    p_nom_parametro => 'p_num_spto',
+                                    p_val_parametro =>  p_num_spto );  
+    --
+    trn_k_ptd.p_gen_traza_parametro(p_nom_prg       => g_k_nom_prg   ,
+                                    p_nom_parametro => 'p_num_riesgo',
+                                    p_val_parametro =>  p_num_riesgo );  
+    --
+    trn_k_ptd.p_gen_traza_parametro(p_nom_prg       => g_k_nom_prg         ,
+                                    p_nom_parametro => 'p_num_secu_cta_tar',
+                                    p_val_parametro =>  p_num_secu_cta_tar );  
+    --
+    p_ini_globales_ptd_aseg;
+    --
+    dc_k_a1001331.p_lee(p_cod_cia   => p_cod_cia  ,
+                        p_tip_docum => p_tip_docum,
+                        p_cod_docum => p_cod_docum);
+    --
+    l_reg_tercero:= fp_dev_reg_a1001331(p_cod_cia   => p_cod_cia   ,
+                                        p_tip_docum => p_tip_docum ,
+                                        p_cod_docum => p_cod_docum );
+    --
+    IF l_reg_tercero.cod_cia !=''
+    THEN
+       --
+       BEGIN
+          --
+          IF trn_k_g0000000.f_mca_multi_cta_cte = 'S'
+          THEN
+             -- Si el tercero no tiene ninguna cuenta, este p_lee no falla
+             dc_k_a1002201.p_lee(p_cod_cia          => p_cod_cia         ,
+                                 p_tip_docum        => p_tip_docum       ,
+                                 p_cod_docum        => p_cod_docum       ,
+                                 p_cod_act_tercero  => trn.UNO           ,
+                                 p_num_secu_cta_tar => p_num_secu_cta_tar);
+           END IF; 
+           --            
+           IF p_num_riesgo IS NULL
+           THEN
+              --
+              l_num_riesgo := 0;
+              --
+           ELSE
+              --
+              l_num_riesgo := p_num_riesgo;
+              --
+           END IF;
+           --
+           em_k_a1000802.p_lee_vigente(p_cod_cia    => p_cod_cia   ,
+                                       p_num_poliza => p_num_poliza,
+                                       p_num_spto   => p_num_spto  ,
+                                       p_num_riesgo => l_num_riesgo,
+                                       p_tip_docum  => p_tip_docum ,
+                                       p_cod_docum  => p_cod_docum );
+           --
+           l_reg_802 := em_k_a1000802.reg;
+           --
+           IF l_reg_802.tip_domicilio   IS NOT NULL OR
+              l_reg_802.nom_domicilio1 IS NOT NULL OR
+              l_reg_802.nom_domicilio2 IS NOT NULL OR
+              l_reg_802.nom_domicilio3 IS NOT NULL OR
+              l_reg_802.cod_localidad  IS NOT NULL OR
+              l_reg_802.nom_localidad  IS NOT NULL OR
+              l_reg_802.cod_pais       IS NOT NULL OR 
+              l_reg_802.cod_prov       IS NOT NULL OR
+              l_reg_802.cod_estado     IS NOT NULL OR
+              l_reg_802.cod_postal     IS NOT NULL OR
+              l_reg_802.atr_domicilio1 IS NOT NULL OR
+              l_reg_802.atr_domicilio2 IS NOT NULL OR
+              l_reg_802.atr_domicilio3 IS NOT NULL OR
+              l_reg_802.atr_domicilio4 IS NOT NULL OR
+              l_reg_802.atr_domicilio5 IS NOT NULL OR
+              l_reg_802.anx_domicilio  IS NOT NULL OR
+              l_reg_802.ext_cod_postal IS NOT NULL OR
+              l_reg_802.tlf_extension  IS NOT NULL 
+           THEN
+              --
+              l_reg_tercero.tip_domicilio  := l_reg_802.tip_domicilio  ;
+              l_reg_tercero.nom_domicilio1 := l_reg_802.nom_domicilio1 ;
+              l_reg_tercero.nom_domicilio2 := l_reg_802.nom_domicilio2 ;
+              l_reg_tercero.nom_domicilio3 := l_reg_802.nom_domicilio3 ;
+              l_reg_tercero.cod_localidad  := l_reg_802.cod_localidad  ;
+              l_reg_tercero.nom_localidad  := l_reg_802.nom_localidad  ;
+              l_reg_tercero.cod_pais       := l_reg_802.cod_pais       ;
+              l_reg_tercero.cod_prov       := l_reg_802.cod_prov       ;
+              l_reg_tercero.cod_estado     := l_reg_802.cod_estado     ;
+              l_reg_tercero.cod_postal     := l_reg_802.cod_postal     ;
+              l_reg_tercero.atr_domicilio1 := l_reg_802. atr_domicilio1;
+              l_reg_tercero.atr_domicilio2 := l_reg_802.atr_domicilio2 ;
+              l_reg_tercero.atr_domicilio3 := l_reg_802.atr_domicilio3 ;
+              l_reg_tercero.atr_domicilio4 := l_reg_802.atr_domicilio4 ;
+              l_reg_tercero.atr_domicilio5 := l_reg_802.atr_domicilio5 ;
+              l_reg_tercero.anx_domicilio  := l_reg_802.anx_domicilio  ;
+              l_reg_tercero.ext_cod_postal := l_reg_802.ext_cod_postal ;
+              l_reg_tercero.tlf_extension  := l_reg_802. tlf_extension ;
+              --
+           END IF;
+           --
+           IF l_reg_802.tip_etiqueta           IS NOT NULL OR
+              l_reg_802.txt_etiqueta1          IS NOT NULL OR
+              l_reg_802.txt_etiqueta2          IS NOT NULL OR
+              l_reg_802.txt_etiqueta3          IS NOT NULL OR
+              l_reg_802.txt_etiqueta4          IS NOT NULL OR
+              l_reg_802.txt_etiqueta5          IS NOT NULL OR
+              l_reg_802.cod_pais_etiqueta      IS NOT NULL OR
+              l_reg_802.cod_estado_etiqueta    IS NOT NULL OR
+              l_reg_802.cod_prov_etiqueta      IS NOT NULL OR
+              l_reg_802.cod_postal_etiqueta    IS NOT NULL OR
+              l_reg_802.cod_localidad_etiqueta IS NOT NULL OR
+              l_reg_802.nom_localidad_etiqueta IS NOT NULL
+           THEN
+              --
+              l_reg_tercero.tip_etiqueta           := l_reg_802.tip_etiqueta          ;
+              l_reg_tercero.txt_etiqueta1          := l_reg_802.txt_etiqueta1         ;
+              l_reg_tercero.txt_etiqueta2          := l_reg_802.txt_etiqueta2         ;
+              l_reg_tercero.txt_etiqueta3          := l_reg_802.txt_etiqueta3         ;
+              l_reg_tercero.txt_etiqueta4          := l_reg_802.txt_etiqueta4         ;
+              l_reg_tercero.txt_etiqueta5          := l_reg_802.txt_etiqueta5         ;
+              l_reg_tercero.cod_pais_etiqueta      := l_reg_802.cod_pais_etiqueta     ;
+              l_reg_tercero.cod_estado_etiqueta    := l_reg_802.cod_estado_etiqueta   ;
+              l_reg_tercero.cod_prov_etiqueta      := l_reg_802.cod_prov_etiqueta     ;
+              l_reg_tercero.cod_postal_etiqueta    := l_reg_802.cod_postal_etiqueta   ;
+              l_reg_tercero.cod_localidad_etiqueta := l_reg_802.cod_localidad_etiqueta;
+              l_reg_tercero.nom_localidad_etiqueta := l_reg_802.nom_localidad_etiqueta;
+              --
+           END IF;
+           --
+           IF l_reg_802.cod_entidad      IS NOT NULL OR
+              l_reg_802.cod_oficina      IS NOT NULL OR
+              l_reg_802.cta_cte          IS NOT NULL OR 
+              l_reg_802.cta_dc           IS NOT NULL OR
+              l_reg_802.nom_titular_cta  IS NOT NULL
+           THEN
+              --
+              l_reg_tercero.cod_entidad     := l_reg_802.cod_entidad    ;
+              l_reg_tercero.cod_oficina     := l_reg_802.cod_oficina    ;
+              l_reg_tercero.cta_cte         := l_reg_802.cta_cte        ;
+              l_reg_tercero.cta_dc          := l_reg_802.cta_dc         ;
+              l_reg_tercero.nom_titular_cta := l_reg_802.nom_titular_cta;
+              --
+           END IF;
+           --
+           IF trn_k_g0000000.f_mca_multi_cta_cte = 'S'             AND 
+              l_reg_802.num_secu_cta IS NOT NULL 
+           THEN
+              -- Si el tercero no tiene ninguna cuenta, este p_lee no falla.
+              dc_k_a1002201.p_lee(p_cod_cia          => p_cod_cia             ,
+                                  p_tip_docum        => p_tip_docum           ,
+                                  p_cod_docum        => p_cod_docum           ,
+                                  p_cod_act_tercero  => 1                     ,
+                                  p_num_secu_cta_tar => l_reg_802.num_secu_cta);
+              --                    
+              l_reg_tercero.cod_entidad := dc_k_a1002201.f_cod_entidad;
+              l_reg_tercero.cod_oficina := dc_k_a1002201.f_cod_oficina;
+              l_reg_tercero.cta_cte     := dc_k_a1002201.f_cta_cte    ;
+              l_reg_tercero.cta_dc      := dc_k_a1002201.f_cta_dc     ;                                   
+              --
+           END IF; 
+           --
+           IF l_reg_802.tip_tarjeta      IS NOT NULL OR
+              l_reg_802.cod_tarjeta      IS NOT NULL OR
+              l_reg_802.num_tarjeta      IS NOT NULL OR
+              l_reg_802.fec_vcto_tarjeta IS NOT NULL
+           THEN
+              --
+              l_reg_tercero.tip_tarjeta      := l_reg_802.tip_tarjeta     ;
+              l_reg_tercero.cod_tarjeta      := l_reg_802.cod_tarjeta     ;
+              l_reg_tercero.num_tarjeta      := l_reg_802.num_tarjeta     ;
+              l_reg_tercero.fec_vcto_tarjeta := l_reg_802.fec_vcto_tarjeta;
+              -- 
+           END IF;
+           --
+           IF l_reg_802.tlf_numero IS NOT NULL OR
+              l_reg_802.tlf_zona   IS NOT NULL OR
+              l_reg_802.tlf_numero IS NOT NULL OR
+              l_reg_802.fax_numero IS NOT NULL
+           THEN
+              --
+              l_reg_tercero.tlf_pais   := l_reg_802.tlf_pais  ;
+              l_reg_tercero.tlf_zona   := l_reg_802.tlf_zona  ;
+              l_reg_tercero.tlf_numero := l_reg_802.tlf_numero;
+              l_reg_tercero.fax_numero := l_reg_802.fax_numero;
+              --
+           END IF;
+           --
+           l_reg_tercero.num_apartado              := NVL(l_reg_802.num_apartado    ,
+                                                          l_reg_tercero.num_apartado);
+           --
+           l_reg_tercero.num_apartado_etiqueta     := NVL(l_reg_802.num_apartado_etiqueta    ,
+                                                          l_reg_tercero.num_apartado_etiqueta);
+           --
+           l_reg_tercero.email                     := NVL(l_reg_802.email    ,
+                                                          l_reg_tercero.email);
+           --
+           l_reg_tercero.txt_email                 := NVL(l_reg_802.txt_email    ,
+                                                          l_reg_tercero.txt_email);
+           --
+           l_reg_tercero.nom_contacto              := NVL(l_reg_802.nom_contacto    ,
+                                                          l_reg_tercero.nom_contacto);
+           --
+           l_reg_tercero.apellido_contacto         := NVL(l_reg_802.apellido_contacto    ,
+                                                          l_reg_tercero.apellido_contacto);
+           --
+           l_reg_tercero.tip_docum_contacto        := NVL(l_reg_802.tip_docum_contacto    ,
+                                                          l_reg_tercero.tip_docum_contacto);
+           --
+           l_reg_tercero.cod_docum_contacto        := NVL(l_reg_802.cod_docum_contacto    ,
+                                                          l_reg_tercero.cod_docum_contacto);
+           --
+           l_reg_tercero.cod_nacionalidad_contacto := NVL(l_reg_802.cod_nacionalidad_contacto    ,
+                                                          l_reg_tercero.cod_nacionalidad_contacto);
+           --
+           l_reg_tercero.tip_cargo                 := NVL(l_reg_802.tip_cargo    ,
+                                                          l_reg_tercero.tip_cargo);
+           --
+           l_reg_tercero.obs_asegurado             := NVL(l_reg_802.obs_asegurado    ,
+                                                          l_reg_tercero.obs_asegurado);
+           --
+           l_reg_tercero.cod_compensacion          := NVL(l_reg_802.cod_compensacion    ,
+                                                          l_reg_tercero.cod_compensacion);
+           --
+        EXCEPTION
+           WHEN l_error THEN
+              --
+              NULL;
+              --
+        END;
+        --
+     END IF;
+     --
+     pp_asigna_globales_ptd_aseg(p_reg => l_reg_tercero);
+     --
+     trn_k_ptd.p_gen_final_traza(p_nom_prg    => g_k_nom_prg          ,
+                                 p_nom_metodo => 'f_con_datos_asegurado');
+     --  
+     RETURN l_reg_tercero;
+     --
+   END f_con_datos_asegurado;
+   --
+END dc_k_ptd_thp;
+/

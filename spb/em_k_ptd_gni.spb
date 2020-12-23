@@ -1,0 +1,777 @@
+CREATE OR REPLACE PACKAGE BODY TRON2000.EM_K_PTD_GNI AS
+ --
+ /* -------------------- VERSION = 1.02 -------------------- */
+ --
+ /* -------------------- MODIFICACIONES --------------------
+ || 2020/11/11 - hsolive - 1.02
+ ||
+ || Inclusión de método que devuelve el codigo de canal 3
+ */ --------------------------------------------------------
+ --
+ /* --------------------------------------------------
+ || Aqui comienza la declaracion de variables GLOBALES
+ */ --------------------------------------------------
+ --
+ --
+ /* ---------------------------------------------------
+ || Aqui comienza la declaracion de constantes GLOBALES
+ */ ---------------------------------------------------
+ --
+ g_k_fmt_f CONSTANT VARCHAR2(8) := 'ddmmyyyy';
+ --
+ g_k_cod_secc_reas_gen CONSTANT x2000221.cod_secc_reas%TYPE := 0   ;
+ g_k_cod_cob_gen       CONSTANT x2000221.cod_cob%TYPE       := 9999;
+ --
+ /* ----------------------------------------------------
+ || Aqui comienza la declaracion de subprogramas LOCALES
+ */ ----------------------------------------------------
+ --
+ --
+ /* -----------------------------------------------------
+ || pp_asigna:
+ ||
+ || Llama a trn_k_global.asigna
+ */ -----------------------------------------------------
+ --
+ PROCEDURE pp_asigna(p_nom_global VARCHAR2,
+                     p_val_global VARCHAR2)
+ IS
+ BEGIN
+    --
+    trn_k_global.asigna(p_nom_global,p_val_global);
+    --
+ END pp_asigna;
+ --
+ --
+ /* -----------------------------------------------------
+ || pp_asigna:
+ ||
+ || Llama a trn_k_global.asigna
+ */ -----------------------------------------------------
+ --
+ PROCEDURE pp_asigna(p_nom_global VARCHAR2,
+                     p_val_global NUMBER  )
+ IS
+ BEGIN
+    --
+    trn_k_global.asigna(p_nom_global,TO_CHAR(p_val_global));
+    --
+ END pp_asigna;
+ --
+ --
+ /* -----------------------------------------------------
+ || pp_asigna:
+ ||
+ || Llama a trn_k_global.asigna
+ */ -----------------------------------------------------
+ --
+ PROCEDURE pp_asigna(p_nom_global VARCHAR2,
+                     p_val_global DATE    )
+ IS
+ BEGIN
+    --
+    trn_k_global.asigna(p_nom_global,TO_CHAR(p_val_global,g_k_fmt_f));
+    --
+ END pp_asigna;
+ --
+ --
+ /* -----------------------------------------------------
+ || fp_devuelve_c:
+ ||
+ || Llama a trn_k_global.devuelve y retorna como VARCHAR2
+ */ -----------------------------------------------------
+ --
+ FUNCTION fp_devuelve_c(p_nom_global VARCHAR2)
+          RETURN VARCHAR2 IS
+ BEGIN
+    --
+    RETURN trn_k_global.devuelve(p_nom_global);
+    --
+ END fp_devuelve_c;
+ --
+ --
+ /* -----------------------------------------------------
+ || fp_devuelve_n:
+ ||
+ || Llama a trn_k_global.devuelve y retorna como NUMBER
+ */ -----------------------------------------------------
+ --
+ FUNCTION fp_devuelve_n(p_nom_global VARCHAR2)
+          RETURN NUMBER IS
+ BEGIN
+    --
+    RETURN TO_NUMBER(trn_k_global.devuelve(p_nom_global));
+    --
+ END fp_devuelve_n;
+ --
+ --
+ /* -----------------------------------------------------
+ || fp_devuelve_f:
+ ||
+ || Llama a trn_k_global.devuelve y retorna como DATE
+ */ -----------------------------------------------------
+ --
+ FUNCTION fp_devuelve_f(p_nom_global VARCHAR2)
+          RETURN DATE IS
+ BEGIN
+    --
+    RETURN TO_DATE(trn_k_global.devuelve(p_nom_global),g_k_fmt_f);
+    --
+ END fp_devuelve_f;
+ --
+ --
+ /* --------------------------------------------------------
+ || Aqui comienza la declaracion de subprogramas del PACKAGE
+ */ --------------------------------------------------------
+ --
+ --
+ /* -----------------------------------------------------
+ || f_dev_cod_mon:
+ ||
+ || Devuelve la moneda
+ */ -----------------------------------------------------
+ --
+ FUNCTION f_dev_cod_mon 
+          RETURN x2000030.cod_mon%TYPE IS
+ BEGIN
+    --
+    RETURN fp_devuelve_n('cod_mon');
+    --
+ END f_dev_cod_mon;
+ --
+ --
+ /* -----------------------------------------------------
+ || f_dev_num_poliza:
+ ||
+ || Devuelve el número de póliza
+ */ -----------------------------------------------------
+ --
+ FUNCTION f_dev_num_poliza
+          RETURN x2000030.num_poliza%TYPE IS
+ BEGIN
+    --
+    RETURN fp_devuelve_c('num_poliza');
+    --
+ END f_dev_num_poliza;
+ --
+ --
+ /* -----------------------------------------------------
+ || f_dev_tip_spto:
+ ||
+ || Devuelve el tipo se suplemento
+ */ -----------------------------------------------------
+ --
+ FUNCTION f_dev_tip_spto
+          RETURN x2000030.tip_spto%TYPE IS
+ BEGIN
+    --
+    RETURN fp_devuelve_c('tip_spto');
+    --
+ END f_dev_tip_spto;
+ --
+ --
+ /* -----------------------------------------------------
+ || f_dev_cod_spto:
+ ||
+ || Devuelve el codigo de suplemento
+ */ -----------------------------------------------------
+ --
+ FUNCTION f_dev_cod_spto
+          RETURN x2000030.cod_spto%TYPE IS
+ BEGIN
+    --
+    RETURN fp_devuelve_n('cod_spto');
+    --
+ END f_dev_cod_spto;
+ --
+ --
+ /* -----------------------------------------------------
+ || f_dev_sub_cod_spto:
+ ||
+ || Devuelve el sub-código de suplemento
+ */ -----------------------------------------------------
+ --
+ FUNCTION f_dev_sub_cod_spto
+          RETURN x2000030.sub_cod_spto%TYPE IS
+ BEGIN
+    --
+    RETURN fp_devuelve_n('sub_cod_spto');
+    --
+ END f_dev_sub_cod_spto;
+ --
+ --
+ /* -----------------------------------------------------
+ || f_dev_mca_spto_tmp:
+ ||
+ || Devuelve si el suplemento es temporal
+ */ -----------------------------------------------------
+ --
+ FUNCTION f_dev_mca_spto_tmp
+          RETURN x2000030.mca_spto_tmp%TYPE IS
+ BEGIN
+    --
+    RETURN fp_devuelve_c('mca_spto_tmp');
+    --
+ END f_dev_mca_spto_tmp;
+ --
+ --
+ /* -----------------------------------------------------
+ || f_dev_num_spto:
+ ||
+ || Devuelve el número de suplemento
+ */ -----------------------------------------------------
+ --
+ FUNCTION f_dev_num_spto
+          RETURN x2000030.num_spto%TYPE IS
+ BEGIN
+    --
+    RETURN fp_devuelve_n('num_spto');
+    --
+ END f_dev_num_spto;
+ --
+ --
+ /* -----------------------------------------------------
+ || f_dev_num_apli:
+ ||
+ || Devuevle el número de aplicación
+ */ -----------------------------------------------------
+ --
+ FUNCTION f_dev_num_apli
+          RETURN x2000030.num_apli%TYPE IS
+ BEGIN
+    --
+    RETURN fp_devuelve_n('num_apli');
+    --
+ END f_dev_num_apli;
+ --
+ --
+ /* -----------------------------------------------------
+ || f_dev_num_spto_apli:
+ ||
+ || Devuelve el número de suplemento de aplicación
+ */ -----------------------------------------------------
+ --
+ FUNCTION f_dev_num_spto_apli
+          RETURN x2000030.num_spto_apli%TYPE IS
+ BEGIN
+    --
+    RETURN fp_devuelve_n('num_spto_apli');
+    --
+ END f_dev_num_spto_apli;
+ --
+ --
+ /* -----------------------------------------------------
+ || f_dev_cod_ramo:
+ ||
+ || Devuelve el código de ramo
+ */ -----------------------------------------------------
+ --
+ FUNCTION f_dev_cod_ramo
+          RETURN x2000030.cod_ramo%TYPE IS
+ BEGIN
+    --
+    RETURN fp_devuelve_n('cod_ramo');
+    --
+ END f_dev_cod_ramo;
+ --
+ --
+ /* -----------------------------------------------------
+ || f_dev_cod_sector:
+ ||
+ || Devuelve el código de sector
+ */ -----------------------------------------------------
+ --
+ FUNCTION f_dev_cod_sector
+          RETURN x2000030.cod_sector%TYPE IS
+ BEGIN
+    --
+    RETURN fp_devuelve_n('cod_sector');
+    --
+ END f_dev_cod_sector;
+ --
+ --
+ /* -----------------------------------------------------
+ || f_dev_fec_efec_spto:
+ ||
+ || Devuelve la fecha de fecto del suplemento
+ */ -----------------------------------------------------
+ --
+ FUNCTION f_dev_fec_efec_spto
+          RETURN x2000030.fec_efec_spto%TYPE IS
+ BEGIN
+    --
+    RETURN fp_devuelve_f('fec_efec_spto');
+    --
+ END f_dev_fec_efec_spto;
+ --
+ --
+ /* -----------------------------------------------------
+ || f_dev_hora_desde:
+ ||
+ || Devuelve la hora de efecto
+ */ -----------------------------------------------------
+ --
+ FUNCTION f_dev_hora_desde
+          RETURN x2000030.hora_desde%TYPE IS
+ BEGIN
+    --
+    RETURN fp_devuelve_c('hora_desde');
+    --
+ END f_dev_hora_desde;
+ --
+ --
+ /* -----------------------------------------------------
+ || f_dev_cod_negocio:
+ ||
+ || Devuelve el código de negocio (GLOBAL RISKS)
+ */ -----------------------------------------------------
+ --
+ FUNCTION f_dev_cod_negocio
+          RETURN x2000030.cod_negocio%TYPE IS
+ BEGIN
+    --
+    RETURN fp_devuelve_c('cod_negocio');
+    --
+ END f_dev_cod_negocio;
+ --
+ --
+ /* -----------------------------------------------------
+ || f_dev_fec_vcto_spto:
+ ||
+ || Devuelve el efecto del suplemento
+ */ -----------------------------------------------------
+ --
+ FUNCTION f_dev_fec_vcto_spto
+          RETURN x2000030.fec_vcto_spto%TYPE IS
+ BEGIN
+    --
+    RETURN fp_devuelve_f('fec_vcto_spto');
+    --
+ END f_dev_fec_vcto_spto;
+ --
+ --
+ /* -----------------------------------------------------
+ || f_dev_fec_emision_spto:
+ ||
+ || Devuelve la fecha de emisión del suplemento
+ */ -----------------------------------------------------
+ --
+ FUNCTION f_dev_fec_emision_spto
+          RETURN x2000030.fec_emision_spto%TYPE IS
+ BEGIN
+    --
+    RETURN fp_devuelve_f('fec_emision_spto');
+    --
+ END f_dev_fec_emision_spto;
+ --
+ --
+ /* -----------------------------------------------------
+ || f_dev_tip_duracion:
+ ||
+ || Devuelve la duración de la póliza
+ */ -----------------------------------------------------
+ --
+ FUNCTION f_dev_tip_duracion
+          RETURN x2000030.tip_duracion%TYPE IS
+ BEGIN
+    --
+    RETURN fp_devuelve_n('tip_duracion');
+    --
+ END f_dev_tip_duracion;
+ --
+ --
+ /* -----------------------------------------------------
+ || f_dev_num_renovaciones:
+ ||
+ || Devuelve el número de renovaciones
+ */ -----------------------------------------------------
+ --
+ FUNCTION f_dev_num_renovaciones
+          RETURN x2000030.num_renovaciones%TYPE IS
+ BEGIN
+    --
+    RETURN fp_devuelve_n('num_renovaciones');
+    --
+ END f_dev_num_renovaciones;
+ --
+ --
+ /* -----------------------------------------------------
+ || f_dev_num_poliza_cliente:
+ ||
+ || Devuelve la póliza cliente
+ */ -----------------------------------------------------
+ --
+ FUNCTION f_dev_num_poliza_cliente
+          RETURN x2000030.num_poliza_cliente%TYPE IS
+ BEGIN
+    --
+    RETURN fp_devuelve_c('num_poliza_cliente');
+    --
+ END f_dev_num_poliza_cliente;
+ --
+ --
+ /* -----------------------------------------------------
+ || f_dev_num_poliza_grupo:
+ ||
+ || Devuelve la póliza grupo
+ */ -----------------------------------------------------
+ --
+ FUNCTION f_dev_num_poliza_grupo
+          RETURN x2000030.num_poliza_grupo%TYPE IS
+ BEGIN
+    --
+    RETURN fp_devuelve_c('num_poliza_grupo');
+    --
+ END f_dev_num_poliza_grupo;
+ --
+ --
+ /* -----------------------------------------------------
+ || f_dev_num_contrato:
+ ||
+ || Devuelve el número de contrato
+ */ -----------------------------------------------------
+ --
+ FUNCTION f_dev_num_contrato
+          RETURN x2000030.num_contrato%TYPE IS
+ BEGIN
+    --
+    RETURN NVL(fp_devuelve_n('num_contrato'),em_k_ptd_gni.NUM_CONTRATO_GEN);
+    --
+ END f_dev_num_contrato;
+ --
+ --
+ /* -----------------------------------------------------
+ || f_dev_num_subcontrato:
+ ||
+ || Devuelve el número de sub-contrato
+ */ -----------------------------------------------------
+ --
+ FUNCTION f_dev_num_subcontrato
+          RETURN x2000030.num_subcontrato%TYPE IS
+ BEGIN
+    --
+    RETURN NVL(fp_devuelve_n('num_subcontrato'),em_k_ptd_gni.NUM_SUBCONTRATO_GEN);
+    --
+ END f_dev_num_subcontrato;
+ --
+ --
+ /* -----------------------------------------------------
+ || f_dev_cod_nivel3:
+ ||
+ || Devuelve el nivel 3 de la estructura comercial
+ */ -----------------------------------------------------
+ --
+ FUNCTION f_dev_cod_nivel3
+          RETURN x2000030.cod_nivel3%TYPE IS
+ BEGIN
+    --
+    RETURN fp_devuelve_n('cod_nivel3');
+    --
+ END f_dev_cod_nivel3;
+ --
+ --
+ /* -----------------------------------------------------
+ || f_dev_tip_poliza_tr:
+ ||
+ || Devuelve el tipo de póliza de transportes
+ */ -----------------------------------------------------
+ --
+ FUNCTION f_dev_tip_poliza_tr
+          RETURN x2000030.tip_poliza_tr%TYPE IS
+ BEGIN
+    --
+    RETURN fp_devuelve_c('tip_poliza_tr');
+    --
+ END f_dev_tip_poliza_tr;
+ --
+ --
+ /* -----------------------------------------------------
+ || f_dev_cant_renovaciones:
+ ||
+ || Devuelve la cantidad máxima de renovaciones
+ */ -----------------------------------------------------
+ --
+ FUNCTION f_dev_cant_renovaciones
+          RETURN x2000030.cant_renovaciones%TYPE IS
+ BEGIN
+    --
+    RETURN fp_devuelve_n('cant_renovaciones');
+    --
+ END f_dev_cant_renovaciones;
+ --
+ --
+ /* -----------------------------------------------------
+ || f_dev_cod_agt:
+ ||
+ || Devuelve la clave de agente
+ */ -----------------------------------------------------
+ --
+ FUNCTION f_dev_cod_agt          
+          RETURN x2000030.cod_agt%TYPE IS
+ BEGIN
+    --
+    RETURN fp_devuelve_n('cod_agt');
+    --
+ END f_dev_cod_agt;
+ --
+ --
+ /* -----------------------------------------------------
+ || f_dev_cod_ejecutivo:
+ ||
+ || Devuelve el codigo de ejecutivo
+ */ -----------------------------------------------------
+ --
+ FUNCTION f_dev_cod_ejecutivo         
+          RETURN x2000030.cod_ejecutivo%TYPE IS
+ BEGIN
+    --
+    RETURN fp_devuelve_c('cod_ejecutivo');
+    --
+ END f_dev_cod_ejecutivo;
+ --
+ --
+ /* -----------------------------------------------------
+ || f_dev_tip_gestor:
+ ||
+ || Devuelve el tipo de gestor de cobro
+ */ -----------------------------------------------------
+ --
+ FUNCTION f_dev_tip_gestor 
+          RETURN x2000030.tip_gestor%TYPE IS
+ BEGIN
+    --
+    RETURN fp_devuelve_c('tip_gestor');
+    --
+ END f_dev_tip_gestor;
+ --
+ --
+ /* -----------------------------------------------------
+ || f_dev_cod_gestor:
+ ||
+ || Devuelve el código de gestor de cobro
+ */ -----------------------------------------------------
+ --
+ FUNCTION f_dev_cod_gestor 
+          RETURN x2000030.cod_gestor%TYPE IS
+ BEGIN
+    --
+    RETURN fp_devuelve_c('cod_gestor');
+    --
+ END f_dev_cod_gestor;
+ --
+ --
+ /* -----------------------------------------------------
+ || f_dev_fec_efec_poliza:
+ ||
+ || Devuelve la fecha de fecto de la poliza
+ */ -----------------------------------------------------
+ --
+ FUNCTION f_dev_fec_efec_poliza 
+          RETURN x2000030.fec_efec_poliza%TYPE IS
+ BEGIN
+    --
+    RETURN fp_devuelve_f('fec_efec_poliza');
+    --
+ END f_dev_fec_efec_poliza;
+ --
+ --
+ /* -----------------------------------------------------
+ || f_dev_fec_vcto_poliza:
+ ||
+ || Devuelve la fecha de vencimiento de la poliza
+ */ -----------------------------------------------------
+ --
+ FUNCTION f_dev_fec_vcto_poliza 
+          RETURN x2000030.fec_vcto_poliza%TYPE IS
+ BEGIN
+    --
+    RETURN fp_devuelve_f('fec_vcto_poliza');
+    --
+ END f_dev_fec_vcto_poliza;
+ --
+ --
+ /* -----------------------------------------------------
+ || f_dev_num_presupuesto:
+ ||
+ || Devuelve el número de presupuesto
+ */ -----------------------------------------------------
+ --
+ FUNCTION f_dev_num_presupuesto 
+          RETURN x2000030.num_presupuesto%TYPE IS
+ BEGIN
+    --
+    RETURN fp_devuelve_c('num_presupuesto');
+    --
+ END f_dev_num_presupuesto;
+ --
+ --
+ /* -----------------------------------------------------
+ || f_dev_cod_canal3:
+ ||
+ || Devuelve el código de canal 3
+ */ -----------------------------------------------------
+ --
+ FUNCTION f_dev_cod_canal3 RETURN x2000030.cod_canal3%TYPE IS
+ BEGIN
+    --
+    RETURN fp_devuelve_c('cod_canal3');
+    --
+ END f_dev_cod_canal3;
+ --
+ --
+ /* -----------------------------------------------------
+ || p_gen_ctrl_tecnico:
+ ||
+ || Genera un control técnico cuando se ha comprobado que
+ || se ha producido un error
+ */ -----------------------------------------------------
+ --
+ PROCEDURE p_gen_ctrl_tecnico(p_cod_cia      x2000221.cod_cia     %TYPE,
+                              p_num_poliza   x2000221.num_poliza  %TYPE,
+                              p_num_riesgo   x2000221.num_riesgo  %TYPE,
+                              p_cod_error    x2000221.cod_error   %TYPE,
+                              p_txt_error_ct x2000221.txt_error_ct%TYPE,
+                              p_obs_error    x2000221.obs_error   %TYPE) 
+ IS
+  --
+  l_reg x2000221%ROWTYPE;
+  --
+ BEGIN
+    --
+    trn_k_ptd.p_gen_comienzo_traza(p_nom_prg    => 'em_k_ptd_gni'      ,
+                                   p_nom_metodo => 'p_gen_ctrl_tecnico');
+    --
+    trn_k_ptd.p_gen_traza_parametro(p_nom_prg       => 'em_k_ptd_gni',
+                                    p_nom_parametro => 'p_cod_cia'   ,
+                                    p_val_parametro => p_cod_cia     );
+    --
+    trn_k_ptd.p_gen_traza_parametro(p_nom_prg       => 'em_k_ptd_gni',
+                                    p_nom_parametro => 'p_num_poliza',
+                                    p_val_parametro => p_num_poliza  );
+    --
+    trn_k_ptd.p_gen_traza_parametro(p_nom_prg       => 'em_k_ptd_gni',
+                                    p_nom_parametro => 'p_num_riesgo',
+                                    p_val_parametro =>  p_num_riesgo );
+    --
+    trn_k_ptd.p_gen_traza_parametro(p_nom_prg       => 'em_k_ptd_gni',
+                                    p_nom_parametro => 'p_cod_error' ,
+                                    p_val_parametro => p_cod_error   );
+    --
+    trn_k_ptd.p_gen_traza_parametro(p_nom_prg       => 'em_k_ptd_gni'  ,
+                                    p_nom_parametro => 'p_txt_error_ct',
+                                    p_val_parametro => p_txt_error_ct  );
+    --
+    trn_k_ptd.p_gen_traza_parametro(p_nom_prg       => 'em_k_ptd_gni',
+                                    p_nom_parametro => 'p_obs_error' ,
+                                    p_val_parametro => p_obs_error   );
+    --
+    dc_k_g2000210.p_lee(p_cod_cia   => p_cod_cia  ,
+                        p_cod_error => p_cod_error);
+    --
+    l_reg.cod_cia                := p_cod_cia                             ;
+    l_reg.num_poliza             := p_num_poliza                          ;
+    l_reg.num_riesgo             := p_num_riesgo                          ;
+    l_reg.cod_cob                := g_k_cod_cob_gen                       ;
+    l_reg.cod_secc_reas          := g_k_cod_secc_reas_gen                 ;
+    l_reg.cod_nivel_salto        := em_k_ptd.f_dev_cod_nivel_salto        ;
+    l_reg.num_menu_opcion        := em_k_ptd.f_dev_num_menu_opcion        ;
+    l_reg.num_opcion             := em_k_ptd.f_dev_num_opcion             ;
+    l_reg.cod_error              := p_cod_error                           ;
+    l_reg.cod_nivel_autorizacion := dc_k_g2000210.f_cod_nivel_autorizacion;
+    l_reg.tip_rechazo            := dc_k_g2000210.f_tip_rechazo           ;
+    l_reg.mca_spto               := dc_k_g2000210.f_mca_spto              ;
+    l_reg.mca_rf                 := dc_k_g2000210.f_mca_rf                ;
+    l_reg.mca_poliza             := dc_k_g2000210.f_mca_poliza            ;
+    l_reg.cod_sist_aut           := dc_k_g2000210.f_cod_sist_aut          ;
+    l_reg.txt_error_ct           := p_txt_error_ct                        ;
+    l_reg.obs_error              := p_obs_error                           ;
+    --
+    em_k_x2000221.p_inserta(l_reg);
+    --
+    trn_k_ptd.p_gen_final_traza(p_nom_prg    => 'em_k_ptd_gni'      ,
+                                p_nom_metodo => 'p_gen_ctrl_tecnico');
+    --                               
+ END p_gen_ctrl_tecnico;
+ --
+ --
+ /* -----------------------------------------------------
+ || p_asg_cod_ejecutivo:
+ ||
+ || Asigna el valor que se desea que el cod_ejecutivo 
+ */ ----------------------------------------------------- 
+ --
+ PROCEDURE p_asg_cod_ejecutivo(p_cod_ejecutivo x2000030.cod_ejecutivo%TYPE)
+ IS
+ BEGIN
+    --
+    pp_asigna('cod_ejecutivo', p_cod_ejecutivo);    
+    --
+ END p_asg_cod_ejecutivo;
+ --
+ --
+ /* -----------------------------------------------------
+ || p_asg_val_campo:
+ ||
+ || Asigna el valor que se desea que el dato de póliza
+ || contenga en el caso que exista una lógica previa al
+ || atributo
+ */ -----------------------------------------------------
+ --
+ PROCEDURE p_asg_val_campo(p_val_campo a2000020.val_campo%TYPE)
+ IS
+ BEGIN
+    --
+    pp_asigna('val_campo',p_val_campo);
+    --
+ END p_asg_val_campo;
+ --
+ --
+ /* -----------------------------------------------------
+ || p_asg_mca_salto:
+ ||
+ || Se determina si el atributo admitirá que el usuario
+ || introduzca información o no
+ */ -----------------------------------------------------
+ --
+ PROCEDURE p_asg_mca_salto(p_mca_salto g2000503.mca_salto%TYPE)
+ IS
+ BEGIN
+    --
+    pp_asigna('mca_salto',p_mca_salto);
+    --
+ END p_asg_mca_salto;
+ --
+ --
+ /* -----------------------------------------------------
+ || p_asg_hora_desde:
+ ||
+ || Asigna el valor que se desea que el atributo
+ || contenga
+ */ -----------------------------------------------------
+ --
+ PROCEDURE p_asg_hora_desde(p_hora_desde x2000030.hora_desde%TYPE)
+ IS
+ BEGIN
+    --
+    pp_asigna('hora_desde',p_hora_desde);
+    --
+ END p_asg_hora_desde;
+ --
+ --
+ /* -----------------------------------------------------
+ || p_asg_fec_emision:
+ ||
+ || Asigna el valor de la fecha emision
+ */ -----------------------------------------------------
+ --
+ PROCEDURE p_asg_fec_emision(p_fec_emision x2000030.fec_emision%TYPE)
+ IS
+ --
+ BEGIN
+    --
+    pp_asigna('fec_emision',p_fec_emision);
+    --
+ END p_asg_fec_emision;
+ --
+END em_k_ptd_gni;
+/

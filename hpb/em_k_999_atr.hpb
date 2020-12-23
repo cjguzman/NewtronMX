@@ -1,0 +1,272 @@
+--
+/* -------------------- MODIFICACIONES --------------------------------------
+|| 2020/11/09 - ricomonx - v 1.00
+|| Creacion
+|| --
+|| Se modifico el procedimiento:  p_val_cod_modalidad;
+|| Valida la modalidad para un ramo, tipo y uso de
+|| vehiculo
+|| --
+|| Se modifico el procedimiento:  p_val_cod_mapfre:
+|| valida que la clave mapfre sea a 12 posiciones 
+|| y exista en los catalogos internos de mapfre una vez que sea ingresada
+|| --
+|| Se modifico el procedimiento:  p_pre_cod_marca
+|| se obtiene el codigo marca
+|| de la clabe mapfre la cual se asigna al campo codigo marca.
+|| --
+|| Se modifico el procedimiento:  p_pre_cod_modelo;
+|| se obtiene el codigo modelo
+|| de la clabe mapfre la cual se asigna al campo codigo modelo.
+|| --
+|| Se modifico el procedimiento:  p_pre_cod_sub_modelo
+|| se obtiene el codigo sub modelo
+|| de la clabe mapfre la cual se asigna al campo codigo sub modelo.
+|| --
+|| Se modifico el procedimiento:  p_val_cod_marca:
+|| Valida que exista el codigo de la marca del vehiculo 
+|| en el catalogo y recupera su descripcion.
+|| --
+|| Se modifico el procedimiento:  p_val_cod_modelo
+|| Valida que exista el codigo de modelo del vehiculo
+|| en el catalogo y recupera su descripcion..   
+|| --
+|| Se modifico el procedimiento:  p_val_cod_sub_modelo
+|| Valida que exista el codigo de submodelo del vehiculo
+|| en el catalogo y recupera su descripcion.
+|| --
+|| Se modifico el procedimiento:  p_pre_num_factura
+|| Comprueba que el tipo de indemnizacion sea diferente de (Valor Factura). 
+|| --
+|| Se modifico el procedimiento:  p_val_num_factura
+|| Comprueba que el tipo de indemnizacion sea igual (Valor Factura). 
+|| --------------------------------------------------------------------------
+|| 2020/11/12 - jaluis2 - v 1.01
+|| Se modifico el procedimiento:  p_val_cod_producto:
+|| valida que el codigo de producto 
+|| exista y esté vigente 
+|| --
+|| Se modifico el procedimiento:  p_val_cod_amb_circulacion:
+|| valida que ambito de circulacion 
+|| proporcionado sea correcto en funcion de ramo y  
+|| codigo de producto
+|| --------------------------------------------------------------------------
+|| 2020/11/12 - ricomonx - v 1.02
+|| Se modifico el procedimiento:  p_pre_val_remolque
+|| Valida Si MCA_REMOLQUE trae una S, dejara campo val_remolque editable
+|| si MCA_REMOLQUE trae una N, limpiara el campo val_remolque.
+|| --
+|| Se modifico el procedimiento:  p_val_val_remolque
+|| Valida valor introducido en val_remolque si MCA_REMOLQUE trae una S
+|| emitiendo error si es nulo y menor o igual a cero. 
+|| --
+|| Se modifico el procedimiento:  p_val_mca_remolque
+|| Valida Si MCA_REMOLQUE es diferente de S o N, emitirá mensaje de error y
+|| no podrá continuar.
+|| --------------------------------------------------------------------------
+|| 2020/11/13 - ricomonx - v 1.03
+|| Se crea nueva funcion de pre-validacion para el campo 
+|| variable tip_pob_ch_riesgo
+|| --
+|| Se creo el procedimiento:  p_pre_des_remolque
+|| Valida que en caso de tener N la marca de remolque, se limpie la
+|| informacion del campo descripcion del remolque.
+|| --
+|| Se creo el procedimiento:  p_val_des_remolque
+|| Valida que en caso de tener S la marca de remolque,el campo descripcion
+|| de remolque tenga informacion.
+|| --
+|| Se creo el procedimiento:  p_pre_fol_solicitud
+|| Valida si el campo asiga Numero de Folio (dato variable FOL_SOLICITUD )
+|| es nulo entonces colocara un 0 en el campo
+|| --
+|| Se creo el procedimiento: p_val_mca_salvamento
+|| Valida que MCA_SALVAMENTO sean diferentes de S o N y si lo son manda un
+|| mensaje de error.
+|| --------------------------------------------------------------------------
+|| 2020/11/14 - ricomonx - v 1.04
+|| Se creo el procedimiento:  p_pre_fec_factura;
+|| Comprueba  tipo de indemnizacion sea diferente de (Valor Factura).
+|| --
+|| Se creo el procedimiento:  p_val_fec_factura
+|| Comprueba  tipo de indemnizacion sea igual (Valor Factura). 
+|| valida fecha de la factura se encuentre dentro del rango de días 
+|| definido para las condiciones de su contratación 
+|| (dias de gracia)
+|| --------------------------------------------------------------------------
+|| 2020/11/19 - ricomonx - v 1.05
+|| Se realizaron correciones sobre observaciones de los 
+|| procedimientos p_val_cod_mapfre, p_val_val_remolque, p_val_mca_remolque,
+|| p_pre_des_remolque.
+|| --
+|| Se creo el procedimiento:  p_val_fol_solicitud
+|| Procedimiento que valida que el campo Numero de Folio (FOL_SOLICITUD) 
+|| no sea Nulo
+|| --------------------------------------------------------------------------
+|| 2020/11/20 - ricomonx - v 1.06
+|| Se creo el procedimiento:  p_pre_val_factura
+|| Procedimiento que sugiere el valor del sub modelo en el valor factura.
+|| --
+|| Se creo el procedimiento:  p_val_val_factura
+|| Procedimiento que valida que el valor de la factura se encuentre entre el
+|| rango minimo y maximo del submodelo.
+|| --
+|| Se creo el procedimiento:  p_pre_fec_nacimiento_ch_riesgo
+|| Procedimiento donde se almacenara la fecha de nacimiento del condutor
+|| de mayor riesgo, cuando el tipo de persona sea S, de lo contrario (N)
+|| asignara NULO.
+|| --------------------------------------------------------------------------
+|| 2020/11/24 - jaluis2 - v 1.07
+|| Se creo el procedimiento:  p_val_cod_tip_vehi
+|| Procedimiento que valida que tipo de vehiculo 
+|| proporcionado sea correcto en funcion del   
+|| codigo de producto y ambito de circulacion
+|| --
+|| Se creo el procedimiento:  p_val_cod_uso_alt
+|| Procedimiento que valida que el codigo de uso alterno 
+|| exista, esté vigente, y sea distinto y con nivel de 
+|| riesgo menor o igual al codigo de uso principal
+|| --
+|| Se creo el procedimiento:  p_val_cod_uso_vehi
+|| Procedimiento que verifica que uso de vehiculo 
+|| ingresado sea un uso de vehiculo que exista y 
+|| que este vigente en la tabla de configuracion de usos 
+|| de vehiculo por producto.
+|| --
+|| Se elimino el procedimiento:  p_val_cod_modalidad
+|| --
+|| Se modificaron los procedimientos p_val_cod_amb_circulacion, 
+|| p_val_cod_productos para incluir la nueva gestion de errores
+|| -----------------------------------------------------
+|| 2020/11/25 - ricomonx - v 1.08
+|| Se creo procedimiento: p_pre_cod_est_ch_riesgo
+|| Procedimiento que almacenara por defecto el codigo de estado de
+|| residencia del conductor de mayor riesgo en DV COD_EST_CH_RIESGO
+|| -----------------------------------------------------
+|| 2020/11/26 - ricomonx - v 1.09
+|| Se creo procedimiento: p_pre_tip_indem
+|| Procedimiento para que en los suplementos asigne un tipo de indemnizacion
+|| --
+|| Se creo procedimiento: p_val_tip_indem
+|| Procedimiento que valida en la tabla  TA999501 que exista el tipo 
+|| de indeminizacion.
+|| -----------------------------------------------------
+|| 2020/11/26 - jaluis2 - v 1.10
+|| Se creo procedimiento: p_pre_tip_per_ch_riesgo
+|| Procedimiento donde se define el tipo de persona
+|| del conductor habitual de mayor riesgo.  En la 
+|| variable ptd_val_04 se recupera una marca que indique 
+|| si en un suplemento ha cambiado el valor de DV de 
+|| tip_docum o cod_docum_de conductor de mayor riesgo.
+|| --
+|| Se creo procedimiento: p_pre_sexo_ch_riesgo
+|| Asigna valor al dato variable sexo_ch_riesgo. En la 
+|| variable ptd_val_04 se recupera una marca que indique 
+|| si en un suplemento ha cambiado el valor de DV de 
+|| tip_docum o cod_docum_de conductor de mayor riesgo.
+|| --
+|| Se creo procedimiento: p_pre_num_puertas_vehi
+|| Obtener del numero de puertas del vehiculo.
+|| -----------------------------------------------------
+|| 2020/11/27 - jaluis2 - v 1.11  
+|| Se crea procedimiento p_pre_tip_docum_ch_riesgo : 
+|| asigna valor al dato variable tip_docum_ch_riesgo 
+|| -- 
+|| Se crea procedimiento p_pre_cod_docum_ch_riesgo : 
+|| asigna valor al dato variable cod_docum_ch_riesgo 
+|| -- 
+|| Se crea procedimiento p_pre_tip_pob_ch_riesgo: 
+|| Asigna valor al dato variable tip_pob_ch_riesgo. En la  
+|| variable ptd_val_04 se recupera una marca que indique  
+|| si en un suplemento ha cambiado el valor de DV de  
+|| tip_docum o cod_docum_de conductor de mayor riesgo. 
+|| -- 
+|| Se modifica el procedimiento p_val_cod_tip_vehi: 
+|| Se incluyen parametros al realizar la llamada a 
+|| em_k_ptd_rsk_mot.p_val_tip_vehi 
+|| -- 
+|| Se modifica el procedimiento p_val_cod_uso_vehi: 
+|| Se incluyen parametros al realizar la llamada a 
+|| em_k_ptd_rsk_mot.p_val_uso_vehi. 
+|| -- 
+|| Se modifica el procedimiento p_val_cod_uso_alt: 
+|| Se incluyen parametros al realizar la llamada a 
+|| em_k_ptd_rsk_mot.p_val_uso_vehi.    
+|| -- 
+|| Se modifica el procedimiento p_val_mca_remolque 
+|| Se  modifica la variable l_t_valores a l_t_valores. 
+|| -- 
+|| Se modifica el procedimiento  p_val_val_remolque 
+|| Se elimina variable l_t_valores, no es utilizada 
+|| Se elimina declaracion de variable l_val_remolque 
+|| no sera utilizada. 
+|| -- 
+|| Se creo el procedimiento:  p_val_fec_nacimiento_ch_riesgo: 
+|| Procedimiento que validara que exista una fecha de nacimiento para continuar 
+|| con la validacion, de lo contrario generar un error en pantalla. 
+|| -- 
+|| Se crea procedimiento p_pre_cod_est_ch_riesgo: 
+|| Procedimiento que almacenara por defecto el codigo de estado de 
+|| residencia del conductor de mayor riesgo en DV COD_EST_CH_RIESGO 
+|| -- 
+|| Se crea procedimiento p_pre_cod_pob_ch_riesgo:: 
+|| Procedimiento que obtiene el codigo de poblacion del conductor de  
+|| mayor riesgo (COD_POB_CH_RIESGO).
+|| -----------------------------------------------------
+|| 2020/11/30 - jaluis2 - v 1.12 
+|| Se modifican los procedimientos de  
+|| p_pre_sexo_ch_riesgo: Se modifica la contante de los NVL 
+|| por la nueva constante varchar2(1). 
+|| -- 
+|| p_pre_tip_per_ch_riesgo: Se modifica la contante de los NVL 
+|| por la nueva constante varchar2(1). 
+|| -- 
+|| p_pre_cod_docum_ch_riesgo: Se modifica para revisar 
+|| la marca mca_fisico al principio del procedimiento. 
+|| -- 
+|| p_pre_num_puertas_vehi: Se elimina el uso de TO_NUMBER. 
+|| -- 
+|| Se elimina el procedimiento: p_val_cod_producto 
+|| -- 
+|| Se modifica p_pre_tip_pob_ch_riesgo: 
+|| se ha anadido to_number en la llamada a em_k_ta999001.f_lee_vigente en 
+|| estado y localidad. 
+|| -----------------------------------------------------
+|| 2020/12/01 - jaluis2 - v 1.13
+|| Se crea procedimiento p_val_cod_producto:
+|| Procedimiento que valida el dato variable cod_producto.
+|| --
+|| hsolive
+|| Se crea el procedimiento p_val_cod_modalidad
+|| Procedimiento que se usa para validar el dato variable modalidad 
+|| --
+|| AZRONDAX 
+|| Se modifico el procedimiento p_pre_fol_solicitud 
+|| se agrego una conversion  a la  variable  fol_solicitud 
+|| se agrego una constante   tron2000.trn_k_ptd.CERO 
+|| se corrigio identacion  
+|| -- 
+|| Se modifico el procedimiento p_val_anio_submodelo 
+|| se elimino la variable l_val_sub_modelo 
+|| se agrego una conversion  p_val_anio_sub_modelo 
+|| se corrigio identacion  
+|| -- 
+|| se corrigio identacion codigo 
+|| se actualizo el procedimiento p_val_tip_indem  
+|| se cambio el tipo de las variables del procedimiento  
+|| -----------------------------------------------------
+|| 2020/12/03 - jaluis2 - v 1.14
+|| Se crea procedimiento p_val_tip_docum_ch_riesgo
+|| Procedimiento que valida el dato variable 
+|| tip_docum_ch_riesgo. Aqui se llega cuando desde el
+|| previo se da el caso de que el 
+|| tomador sea persona fisica y no hay conductor
+|| que sea persona fisica por lo que siempre se eleva
+|| la excepcion. 
+|| --
+|| Se modifica el procedimiento p_pre_tip_docum_ch_riesgo
+|| se incluye la validacion de si el tomador es persona 
+|| fisica y no existe conductor persona fisica.
+*/ -----------------------------------------------------
+--
+/

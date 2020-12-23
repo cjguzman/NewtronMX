@@ -1,0 +1,471 @@
+CREATE OR REPLACE PACKAGE BODY tron2000.em_k_ptd_ine AS
+ --
+ /* -------------------- VERSION = 1.02 -------------------- */
+ --
+ /* -------------------- MODIFICACIONES --------------------
+ || 2020/11/12 - JAPERE4 - 1.01
+ || Se crea nueva funcion f_dev_beneficiarios_riesgo que devuelve 
+ || los intervinientes de un tip_benef concreto.
+ || --
+ || 2020/12/11 - hsolive - 1.02
+ || Inclusion del campo de secuencia de tarjeta en el metodo
+ || f_con_beneficiarios_riesgo
+ */ --------------------------------------------------------
+ --
+ /* --------------------------------------------------
+ || Aqui comienza la declaracion de variables GLOBALES
+ */ --------------------------------------------------
+ --
+ --
+ /* ---------------------------------------------------
+ || Aqui comienza la declaracion de constantes GLOBALES
+ */ ---------------------------------------------------
+ --
+ g_k_fmt_f CONSTANT VARCHAR2(8) := 'ddmmyyyy';
+ --
+ /* ----------------------------------------------------
+ || Aqui comienza la declaracion de subprogramas LOCALES
+ */ ----------------------------------------------------
+ --
+ --
+ /* -----------------------------------------------------
+ || pp_asigna:
+ ||
+ || Llama a trn_k_global.asigna
+ */ -----------------------------------------------------
+ --
+ PROCEDURE pp_asigna(p_nom_global VARCHAR2,
+                     p_val_global VARCHAR2) 
+ IS
+ BEGIN
+    --
+    trn_k_global.asigna(p_nom_global,p_val_global);
+    --
+ END pp_asigna;
+ --
+ --
+ /* -----------------------------------------------------
+ || pp_asigna:
+ ||
+ || Llama a trn_k_global.asigna
+ */ -----------------------------------------------------
+ --
+ PROCEDURE pp_asigna(p_nom_global VARCHAR2,
+                     p_val_global NUMBER  )
+ IS
+ BEGIN
+    --
+    trn_k_global.asigna(p_nom_global,TO_CHAR(p_val_global));
+    --
+ END pp_asigna;
+ --
+ --
+ /* -----------------------------------------------------
+ || pp_asigna:
+ ||
+ || Llama a trn_k_global.asigna
+ */ -----------------------------------------------------
+ --
+ PROCEDURE pp_asigna(p_nom_global VARCHAR2,
+                     p_val_global DATE    )
+ IS
+ BEGIN
+    --
+    trn_k_global.asigna(p_nom_global,TO_CHAR(p_val_global,g_k_fmt_f));
+    --
+ END pp_asigna;
+ --
+ --
+ /* -----------------------------------------------------
+ || fp_devuelve_c:
+ ||
+ || Llama a trn_k_global.devuelve y retorna como VARCHAR2
+ */ -----------------------------------------------------
+ --
+ FUNCTION fp_devuelve_c(p_nom_global VARCHAR2)
+          RETURN VARCHAR2 IS
+ BEGIN
+    --
+    RETURN trn_k_global.devuelve(p_nom_global);
+    --
+ END fp_devuelve_c;
+ --
+ --
+ /* -----------------------------------------------------
+ || fp_devuelve_n:
+ ||
+ || Llama a trn_k_global.devuelve y retorna como NUMBER
+ */ -----------------------------------------------------
+ --
+ FUNCTION fp_devuelve_n(p_nom_global VARCHAR2)
+          RETURN NUMBER IS
+ BEGIN
+    --
+    RETURN TO_NUMBER(trn_k_global.devuelve(p_nom_global));
+    --
+ END fp_devuelve_n;
+ --
+ --
+ /* -----------------------------------------------------
+ || fp_devuelve_f:
+ ||
+ || Llama a trn_k_global.devuelve y retorna como DATE
+ */ -----------------------------------------------------
+ --
+ FUNCTION fp_devuelve_f(p_nom_global VARCHAR2)
+          RETURN DATE IS
+ BEGIN
+    --
+    RETURN TO_DATE(trn_k_global.devuelve(p_nom_global),g_k_fmt_f);
+    --
+ END fp_devuelve_f;
+ --
+ --
+ /* --------------------------------------------------------
+ || Aqui comienza la declaracion de subprogramas del PACKAGE
+ */ --------------------------------------------------------
+ --
+ --
+ /* -----------------------------------------------------
+ || f_dev_tip_docum:
+ ||
+ || Devuelve el tipo de documento de la intervención
+ */ -----------------------------------------------------
+ --
+ FUNCTION f_dev_tip_docum RETURN x2000060.tip_docum%TYPE IS
+ BEGIN
+    --
+    RETURN fp_devuelve_c('tip_docum');
+    --
+ END f_dev_tip_docum;
+ --
+ --
+ /* -----------------------------------------------------
+ || f_dev_cod_docum:
+ ||
+ || Devuelve el código de documento de la intervención
+ */ -----------------------------------------------------
+ --
+ FUNCTION f_dev_cod_docum RETURN x2000060.cod_docum%TYPE IS
+ BEGIN
+    --
+    RETURN fp_devuelve_c('cod_docum');
+    --
+ END f_dev_cod_docum;
+ --
+ --
+ /* -----------------------------------------------------
+ || f_dev_tip_docum_defecto:
+ ||
+ || Devuelve el tipo de documento por defecto de la
+ || intervención
+ */ -----------------------------------------------------
+ --
+ FUNCTION f_dev_tip_docum_defecto RETURN x2000060.tip_docum%TYPE IS
+ BEGIN
+    --
+    RETURN fp_devuelve_c('tip_docum_defecto');
+    --
+ END f_dev_tip_docum_defecto;
+ --
+ --
+ /* -----------------------------------------------------
+ || f_dev_cod_docum_defecto:
+ ||
+ || Devuelve el código de documento de la intervención
+ */ -----------------------------------------------------
+ --
+ FUNCTION f_dev_cod_docum_defecto RETURN x2000060.cod_docum%TYPE IS
+ BEGIN
+    --
+    RETURN fp_devuelve_c('cod_docum_defecto');
+    --
+ END f_dev_cod_docum_defecto;
+ --
+ --
+ /* -----------------------------------------------------
+ || f_dev_tip_benef:
+ ||
+ || Devuelve el código de beneficiario
+ */ -----------------------------------------------------
+ --
+ FUNCTION f_dev_tip_benef RETURN x2000060.tip_benef%TYPE IS
+ BEGIN
+    --
+    RETURN fp_devuelve_c('tip_benef');
+    --
+ END f_dev_tip_benef;
+ --
+ --
+ /* -----------------------------------------------------
+ || p_asg_tip_docum_defecto:
+ ||
+ || Asigna el valor al tipo de documento por defecto
+ */ -----------------------------------------------------
+ --
+ PROCEDURE p_asg_tip_docum_defecto(p_tip_docum_defecto x2000060.tip_docum%TYPE)
+ IS
+ BEGIN
+    --
+    pp_asigna('tip_docum_defecto',p_tip_docum_defecto);
+    --
+ END p_asg_tip_docum_defecto;
+ --
+ --
+ /* -----------------------------------------------------
+ || p_asg_cod_docum_defecto:
+ ||
+ || Asigna el valor al código de documento por defecto
+ */ -----------------------------------------------------
+ --
+ PROCEDURE p_asg_cod_docum_defecto(p_cod_docum_defecto x2000060.cod_docum%TYPE)
+ IS 
+ BEGIN
+    --
+    pp_asigna('cod_docum_defecto',p_cod_docum_defecto);
+    --
+ END p_asg_cod_docum_defecto;
+ --
+ --
+ /* -----------------------------------------------------
+ || p_asg_tip_docum_mca:
+ ||
+ || Asigna el valor al tipo de documento para determinar
+ || el cálculo
+ */ -----------------------------------------------------
+ --
+ PROCEDURE p_asg_tip_docum_mca(p_tip_docum_defecto x2000060.tip_docum%TYPE)
+ IS
+ BEGIN
+    --
+    pp_asigna('tip_docum_mca',p_tip_docum_defecto);
+    --
+ END p_asg_tip_docum_mca;
+ --
+ --
+ /* -----------------------------------------------------
+ || p_asg_cod_docum_mca:
+ ||
+ || Asigna el valor al código de documento para 
+ || determinar el cálculo
+ */ -----------------------------------------------------
+ --
+ PROCEDURE p_asg_cod_docum_mca(p_cod_docum_defecto x2000060.cod_docum%TYPE)
+ IS
+ BEGIN
+    --
+    pp_asigna('cod_docum_mca',p_cod_docum_defecto);
+    --
+ END p_asg_cod_docum_mca;
+ --
+ --
+ /* -----------------------------------------------------
+ || p_asg_mca_tip_benef:
+ ||
+ || Indica si se desea o no que la intervención
+ || (tip_benef) se solicita en el proceso
+ */ -----------------------------------------------------
+ --
+ PROCEDURE p_asg_mca_tip_benef(p_mca_tip_benef VARCHAR2)
+ IS
+ BEGIN
+    --
+    pp_asigna('mca_tip_benef',p_mca_tip_benef);
+    --
+ END p_asg_mca_tip_benef;
+ --
+ /* -----------------------------------------------------
+ || f_dev_beneficiarios_riesgo:
+ ||
+ || Devuelve los intervinientes de un tip_benef concreto 
+ || para la poliza y riesgo indicado
+ */ -----------------------------------------------------
+ --
+ FUNCTION f_con_beneficiarios_riesgo(p_cod_cia    x2000060.cod_cia    %TYPE,
+                                     p_num_poliza x2000060.num_poliza %TYPE,
+                                     p_num_riesgo x2000060.num_riesgo %TYPE,
+                                     p_tip_benef  x2000060.tip_benef  %TYPE)
+     RETURN t_tb_docum_benef IS
+    --
+    l_t_benef_x2000060 em_k_x2000060.t_benef                 ;
+    l_t_benef_r2000060 em_k_r2000060.t_benef                 ;
+    l_t_benef_a2000060 em_k_a2000060.g_tabla_intervinientes_v;
+    l_tb_docum_benef   t_tb_docum_benef                      ;
+    l_fila             BINARY_INTEGER                        ;
+    --
+ BEGIN
+    --
+    IF em_k_ptd.f_dev_tip_mvto_batch IS NULL
+    THEN
+       --
+       l_t_benef_x2000060 := em_k_x2000060.f_devuelve_benef_riesgo(p_cod_cia    => p_cod_cia   ,
+                                                                   p_num_poliza => p_num_poliza,
+                                                                   p_num_riesgo => p_num_riesgo,
+                                                                   p_tip_benef  => p_tip_benef );
+       --
+       IF l_t_benef_x2000060.EXISTS(l_t_benef_x2000060.FIRST)
+       THEN
+          l_fila := l_t_benef_x2000060.FIRST;
+          --
+          WHILE l_fila IS NOT NULL
+          LOOP
+             --
+             l_tb_docum_benef(l_fila).cod_cia            := l_t_benef_x2000060(l_fila).cod_cia          ;      
+             l_tb_docum_benef(l_fila).num_poliza         := l_t_benef_x2000060(l_fila).num_poliza       ;
+             l_tb_docum_benef(l_fila).num_riesgo         := l_t_benef_x2000060(l_fila).num_riesgo       ;
+             l_tb_docum_benef(l_fila).tip_benef          := l_t_benef_x2000060(l_fila).tip_benef        ;
+             l_tb_docum_benef(l_fila).num_secu           := l_t_benef_x2000060(l_fila).num_secu         ;
+             l_tb_docum_benef(l_fila).tip_docum          := l_t_benef_x2000060(l_fila).tip_docum        ;
+             l_tb_docum_benef(l_fila).cod_docum          := l_t_benef_x2000060(l_fila).cod_docum        ;
+             l_tb_docum_benef(l_fila).mca_principal      := l_t_benef_x2000060(l_fila).mca_principal    ;
+             l_tb_docum_benef(l_fila).mca_calculo        := l_t_benef_x2000060(l_fila).mca_calculo      ;
+             l_tb_docum_benef(l_fila).pct_participacion  := l_t_benef_x2000060(l_fila).pct_participacion;
+             l_tb_docum_benef(l_fila).fec_vcto_cesion    := l_t_benef_x2000060(l_fila).fec_vcto_cesion  ;
+             l_tb_docum_benef(l_fila).imp_cesion         := l_t_benef_x2000060(l_fila).imp_cesion       ;
+             l_tb_docum_benef(l_fila).mca_baja           := l_t_benef_x2000060(l_fila).mca_baja         ;
+             l_tb_docum_benef(l_fila).mca_vigente        := l_t_benef_x2000060(l_fila).mca_vigente      ;
+             l_tb_docum_benef(l_fila).tip_docum_ant      := l_t_benef_x2000060(l_fila).tip_docum_ant    ;
+             l_tb_docum_benef(l_fila).cod_docum_ant      := l_t_benef_x2000060(l_fila).cod_docum_ant    ;
+             l_tb_docum_benef(l_fila).mca_baja_ant       := l_t_benef_x2000060(l_fila).mca_baja_ant     ;
+             l_tb_docum_benef(l_fila).num_prestamo       := l_t_benef_x2000060(l_fila).num_prestamo     ;
+             l_tb_docum_benef(l_fila).tip_relac          := l_t_benef_x2000060(l_fila).tip_relac        ;
+             l_tb_docum_benef(l_fila).num_spto           := trn_k_ptd.NULO                              ;
+             l_tb_docum_benef(l_fila).num_apli           := trn_k_ptd.NULO                              ;
+             l_tb_docum_benef(l_fila).num_spto_apli      := trn_k_ptd.NULO                              ;
+             l_tb_docum_benef(l_fila).num_secu_cta_tar   := trn_k_ptd.UNO                               ;
+             --
+             l_fila := l_t_benef_x2000060.NEXT(l_fila);
+             --
+          END LOOP;
+          --
+       END IF;
+       --
+    ELSIF em_k_ptd.f_dev_tip_mvto_batch = em_trn.PRE_RF_BATCH
+    THEN
+       --
+       l_t_benef_r2000060 := em_k_r2000060.f_tab_benef_riesgo(p_cod_cia      => p_cod_cia,
+                                                              p_num_poliza   => p_num_poliza,
+                                                              p_num_riesgo   => p_num_riesgo,
+                                                              p_tip_benef    => p_tip_benef ,
+                                                              p_num_apli     => em_k_ptd_gni.f_dev_num_apli,
+                                                              p_fec_vigencia => em_k_ptd_gni.f_dev_fec_efec_poliza);
+       --
+       IF l_t_benef_r2000060.EXISTS(l_t_benef_r2000060.FIRST)
+       THEN
+          l_fila := l_t_benef_r2000060.FIRST;
+          --
+          WHILE l_fila IS NOT NULL
+          LOOP
+             --
+             l_tb_docum_benef(l_fila).cod_cia            := l_t_benef_r2000060(l_fila).cod_cia          ;        
+             l_tb_docum_benef(l_fila).num_poliza         := l_t_benef_r2000060(l_fila).num_poliza       ;
+             l_tb_docum_benef(l_fila).num_spto           := l_t_benef_r2000060(l_fila).num_spto         ;
+             l_tb_docum_benef(l_fila).num_apli           := l_t_benef_r2000060(l_fila).num_apli         ;
+             l_tb_docum_benef(l_fila).num_spto_apli      := l_t_benef_r2000060(l_fila).num_spto_apli    ;
+             l_tb_docum_benef(l_fila).num_riesgo         := l_t_benef_r2000060(l_fila).num_riesgo       ;
+             l_tb_docum_benef(l_fila).tip_benef          := l_t_benef_r2000060(l_fila).tip_benef        ;
+             l_tb_docum_benef(l_fila).num_secu           := l_t_benef_r2000060(l_fila).num_secu         ;
+             l_tb_docum_benef(l_fila).tip_docum          := l_t_benef_r2000060(l_fila).tip_docum        ;
+             l_tb_docum_benef(l_fila).cod_docum          := l_t_benef_r2000060(l_fila).cod_docum        ;
+             l_tb_docum_benef(l_fila).mca_principal      := l_t_benef_r2000060(l_fila).mca_principal    ;
+             l_tb_docum_benef(l_fila).mca_calculo        := l_t_benef_r2000060(l_fila).mca_calculo      ;
+             l_tb_docum_benef(l_fila).mca_baja           := l_t_benef_r2000060(l_fila).mca_baja         ;
+             l_tb_docum_benef(l_fila).mca_vigente        := l_t_benef_r2000060(l_fila).mca_vigente      ;
+             l_tb_docum_benef(l_fila).pct_participacion  := l_t_benef_r2000060(l_fila).pct_participacion;
+             l_tb_docum_benef(l_fila).fec_vcto_cesion    := l_t_benef_r2000060(l_fila).fec_vcto_cesion  ;
+             l_tb_docum_benef(l_fila).imp_cesion         := l_t_benef_r2000060(l_fila).imp_cesion       ;
+             l_tb_docum_benef(l_fila).num_prestamo       := l_t_benef_r2000060(l_fila).num_prestamo     ;
+             l_tb_docum_benef(l_fila).tip_relac          := l_t_benef_r2000060(l_fila).tip_relac        ;
+             l_tb_docum_benef(l_fila).num_spto           := trn_k_ptd.NULO                              ;
+             l_tb_docum_benef(l_fila).num_apli           := trn_k_ptd.NULO                              ;
+             l_tb_docum_benef(l_fila).num_spto_apli      := trn_k_ptd.NULO                              ;
+             l_tb_docum_benef(l_fila).num_secu_cta_tar   := trn_k_ptd.UNO                               ;
+             --
+             l_fila := l_t_benef_x2000060.NEXT(l_fila);
+             --
+          END LOOP;
+          --
+       END IF;
+              
+       --
+    ELSE 
+       --
+       l_t_benef_a2000060 := em_k_a2000060.f_devuelve_benef_riesgo(p_cod_cia    => p_cod_cia                  ,
+                                                                   p_num_poliza => p_num_poliza               ,
+                                                                   p_num_spto   => em_k_ptd_gni.f_dev_num_spto,
+                                                                   p_num_riesgo => p_num_riesgo               ,
+                                                                   p_tip_benef  => p_tip_benef                );
+       --
+       IF l_t_benef_a2000060.EXISTS(l_t_benef_a2000060.FIRST)
+       THEN
+          l_fila := l_t_benef_a2000060.FIRST;
+          --
+          WHILE l_fila IS NOT NULL
+          LOOP
+             --
+             l_tb_docum_benef(l_fila).cod_cia            := l_t_benef_a2000060(l_fila).cod_cia          ;      
+             l_tb_docum_benef(l_fila).num_poliza         := l_t_benef_a2000060(l_fila).num_poliza       ;
+             l_tb_docum_benef(l_fila).num_riesgo         := l_t_benef_a2000060(l_fila).num_riesgo       ;
+             l_tb_docum_benef(l_fila).tip_benef          := l_t_benef_a2000060(l_fila).tip_benef        ;
+             l_tb_docum_benef(l_fila).num_secu           := l_t_benef_a2000060(l_fila).num_secu         ;
+             l_tb_docum_benef(l_fila).tip_docum          := l_t_benef_a2000060(l_fila).tip_docum        ;
+             l_tb_docum_benef(l_fila).cod_docum          := l_t_benef_a2000060(l_fila).cod_docum        ;
+             l_tb_docum_benef(l_fila).mca_principal      := l_t_benef_a2000060(l_fila).mca_principal    ;
+             l_tb_docum_benef(l_fila).mca_calculo        := l_t_benef_a2000060(l_fila).mca_calculo      ;
+             l_tb_docum_benef(l_fila).pct_participacion  := l_t_benef_a2000060(l_fila).pct_participacion;
+             l_tb_docum_benef(l_fila).fec_vcto_cesion    := l_t_benef_a2000060(l_fila).fec_vcto_cesion  ;
+             l_tb_docum_benef(l_fila).imp_cesion         := l_t_benef_a2000060(l_fila).imp_cesion       ;
+             l_tb_docum_benef(l_fila).mca_baja           := l_t_benef_a2000060(l_fila).mca_baja         ;
+             l_tb_docum_benef(l_fila).mca_vigente        := l_t_benef_a2000060(l_fila).mca_vigente      ;
+             l_tb_docum_benef(l_fila).tip_docum_ant      := trn_k_ptd.NULO                              ;
+             l_tb_docum_benef(l_fila).cod_docum_ant      := trn_k_ptd.NULO                              ;
+             l_tb_docum_benef(l_fila).mca_baja_ant       := trn_k_ptd.NULO                              ;
+             l_tb_docum_benef(l_fila).num_prestamo       := l_t_benef_a2000060(l_fila).num_prestamo     ;
+             l_tb_docum_benef(l_fila).tip_relac          := l_t_benef_a2000060(l_fila).tip_relac        ;
+             l_tb_docum_benef(l_fila).num_spto           := l_t_benef_a2000060(l_fila).num_spto         ;
+             l_tb_docum_benef(l_fila).num_apli           := l_t_benef_a2000060(l_fila).num_apli         ;
+             l_tb_docum_benef(l_fila).num_spto_apli      := l_t_benef_a2000060(l_fila).num_spto_apli    ;
+             l_tb_docum_benef(l_fila).num_secu_cta_tar   := trn_k_ptd.UNO                               ;
+             --
+             l_fila := l_t_benef_x2000060.NEXT(l_fila);
+             --
+          END LOOP;
+          --
+       END IF;
+       --
+    END IF;
+    --
+    RETURN l_tb_docum_benef;
+    --
+ END f_con_beneficiarios_riesgo;
+ --
+ /* -----------------------------------------------------
+ || f_dev_cod_docum_tomador:
+ ||
+ || Devuelve el codigo de documento del tomador
+ */ -----------------------------------------------------
+ --
+ FUNCTION f_dev_cod_docum_tomador 
+          RETURN x2000060.cod_docum%TYPE IS
+ BEGIN
+    --
+    RETURN fp_devuelve_c('cod_docum_tomador');
+    --
+ END f_dev_cod_docum_tomador;
+ --
+/* ------------------------------------------------------
+ || f_dev_tip_docum_tomador:
+ ||
+ || Devuelve el tipo de documento del tomador
+ */ -----------------------------------------------------
+ --
+ FUNCTION f_dev_tip_docum_tomador 
+          RETURN x2000060.tip_docum%TYPE IS
+ BEGIN
+    --
+    RETURN fp_devuelve_c('tip_docum_tomador');
+    --
+ END f_dev_tip_docum_tomador;
+ -- 
+END em_k_ptd_ine;
+/

@@ -1,0 +1,630 @@
+CREATE OR REPLACE PACKAGE BODY TRON2000.EM_K_PTD_ATR AS
+ --
+ /* -------------------- VERSION = 1.01 -------------------- */
+ --
+ /* -------------------- MODIFICACIONES --------------------
+ || 2020/10/22 - hsolive - 1.01
+ || Metodo devuelve registro de atributo
+ */ --------------------------------------------------------
+ --
+ /* --------------------------------------------------
+ || Aqui comienza la declaracion de variables GLOBALES
+ */ --------------------------------------------------
+ --
+ --
+ /* ---------------------------------------------------
+ || Aqui comienza la declaracion de constantes GLOBALES
+ */ ---------------------------------------------------
+ --
+ g_k_fmt_f      CONSTANT VARCHAR2(8) := 'ddmmyyyy';
+ g_k_prefijo_dv CONSTANT VARCHAR2(2) := 'dv'      ;
+ --
+ g_k_cod_secc_reas_gen CONSTANT x2000221.cod_secc_reas%TYPE := 0   ;
+ g_k_cod_cob_gen       CONSTANT x2000221.cod_cob%TYPE       := 9999;
+ --
+ /* ----------------------------------------------------
+ || Aqui comienza la declaracion de subprogramas LOCALES
+ */ ----------------------------------------------------
+ --
+ /* -----------------------------------------------------
+ || pp_asigna:
+ ||
+ || Llama a trn_k_global.asigna
+ */ -----------------------------------------------------
+ --
+ PROCEDURE pp_asigna(p_nom_global VARCHAR2,
+                     p_val_global VARCHAR2) 
+ IS
+ BEGIN
+    --
+    trn_k_global.asigna(p_nom_global,p_val_global);
+    --
+ END pp_asigna;
+ --
+ --
+ /* -----------------------------------------------------
+ || pp_asigna:
+ ||
+ || Llama a trn_k_global.asigna
+ */ -----------------------------------------------------
+ --
+ PROCEDURE pp_asigna(p_nom_global VARCHAR2,
+                     p_val_global NUMBER  ) 
+ IS
+ BEGIN
+    --
+    trn_k_global.asigna(p_nom_global,TO_CHAR(p_val_global));
+    --
+ END pp_asigna;
+ --
+ --
+ /* -----------------------------------------------------
+ || pp_asigna:
+ ||
+ || Llama a trn_k_global.asigna
+ */ -----------------------------------------------------
+ --
+ PROCEDURE pp_asigna(p_nom_global VARCHAR2,
+                     p_val_global DATE    ) 
+ IS
+ BEGIN
+    --
+    trn_k_global.asigna(p_nom_global,TO_CHAR(p_val_global,g_k_fmt_f));
+    --
+ END pp_asigna;
+ --
+ --
+ /* -----------------------------------------------------
+ || fp_devuelve_c:
+ ||
+ || Llama a trn_k_global.devuelve y retorna como VARCHAR2
+ */ -----------------------------------------------------
+ --
+ FUNCTION fp_devuelve_c(p_nom_global VARCHAR2)
+          RETURN VARCHAR2 IS
+ BEGIN
+    --
+    RETURN trn_k_global.devuelve(p_nom_global);
+    --
+ END fp_devuelve_c;
+ --
+ --
+ /* -----------------------------------------------------
+ || fp_devuelve_n:
+ ||
+ || Llama a trn_k_global.devuelve y retorna como NUMBER
+ */ -----------------------------------------------------
+ --
+ FUNCTION fp_devuelve_n(p_nom_global VARCHAR2)
+          RETURN NUMBER IS
+ BEGIN
+    --
+    RETURN TO_NUMBER(trn_k_global.devuelve(p_nom_global));
+     --
+ END fp_devuelve_n;
+ --
+ --
+ /* -----------------------------------------------------
+ || fp_devuelve_f:
+ ||
+ || Llama a trn_k_global.devuelve y retorna como DATE
+ */ -----------------------------------------------------
+ --
+ FUNCTION fp_devuelve_f(p_nom_global VARCHAR2)
+          RETURN DATE IS
+ BEGIN
+    --
+    RETURN TO_DATE(trn_k_global.devuelve(p_nom_global),g_k_fmt_f);
+    --
+ END fp_devuelve_f;
+ --
+ /* -----------------------------------------------------
+ || fp_dev_reg_x2000020:
+ ||
+ || Devuelve un registro de la tabla x2000020
+ */ -----------------------------------------------------
+ --
+ FUNCTION fp_dev_reg_x2000020(p_cod_cia       x2000020.cod_cia      %TYPE,
+                              p_num_poliza    x2000020.num_poliza   %TYPE,
+                              p_num_riesgo    x2000020.num_riesgo   %TYPE,
+                              p_cod_modalidad x2000020.cod_modalidad%TYPE,
+                              p_num_periodo   x2000020.num_periodo  %TYPE,
+                              p_tip_nivel     x2000020.tip_nivel    %TYPE,
+                              p_cod_campo     x2000020.cod_campo    %TYPE)  
+          RETURN record_atr IS
+ --
+ l_reg_informacion_atributo record_atr;
+ --
+ BEGIN
+    --
+    l_reg_informacion_atributo.cod_cia                     := p_cod_cia                                  ;
+    l_reg_informacion_atributo.num_poliza                  := p_num_poliza                               ;
+    l_reg_informacion_atributo.num_riesgo                  := p_num_riesgo                               ;
+    l_reg_informacion_atributo.cod_modalidad               := p_cod_modalidad                            ;
+    l_reg_informacion_atributo.num_periodo                 := p_num_periodo                              ;
+    l_reg_informacion_atributo.tip_nivel                   := p_tip_nivel                                ;
+    l_reg_informacion_atributo.num_secu                    := em_k_x2000020.f_num_secu                   ;
+    l_reg_informacion_atributo.cod_campo                   := p_cod_campo                                ;
+    l_reg_informacion_atributo.nom_campo                   := em_k_x2000020.f_nom_campo                  ;
+    l_reg_informacion_atributo.tip_campo                   := em_k_x2000020.f_tip_campo                  ;
+    l_reg_informacion_atributo.lng_campo                   := em_k_x2000020.f_lng_campo                  ;
+    l_reg_informacion_atributo.mca_visible                 := em_k_x2000020.f_mca_visible                ;
+    l_reg_informacion_atributo.mca_obligatorio             := em_k_x2000020.f_mca_obligatorio            ;
+    l_reg_informacion_atributo.mca_modalidad               := em_k_x2000020.f_mca_modalidad              ;
+    l_reg_informacion_atributo.mca_calculo                 := em_k_x2000020.f_mca_calculo                ;
+    l_reg_informacion_atributo.mca_presupuesto             := em_k_x2000020.f_mca_presupuesto            ;
+    l_reg_informacion_atributo.mca_suma_aseg               := em_k_x2000020.f_mca_suma_aseg              ;
+    l_reg_informacion_atributo.tip_regulariza              := em_k_x2000020.f_tip_regulariza             ;
+    l_reg_informacion_atributo.tip_regulariza_esp          := em_k_x2000020.f_tip_regulariza_esp         ;
+    l_reg_informacion_atributo.pct_regulariza_esp          := em_k_x2000020.f_pct_regulariza_esp         ;
+    l_reg_informacion_atributo.cod_indice                  := em_k_x2000020.f_cod_indice                 ;
+    l_reg_informacion_atributo.nom_prg_regulariza_esp      := em_k_x2000020.f_nom_prg_regulariza_esp     ;
+    l_reg_informacion_atributo.nom_prg_pre_campo           := em_k_x2000020.f_nom_prg_pre_campo          ;
+    l_reg_informacion_atributo.val_defecto                 := em_k_x2000020.f_val_defecto                ;
+    l_reg_informacion_atributo.nom_tabla_val_defecto       := em_k_x2000020.f_nom_tabla_val_defecto      ;
+    l_reg_informacion_atributo.nom_campo_tabla_val_defecto := em_k_x2000020.f_nom_campo_tabla_val_defecto;
+    l_reg_informacion_atributo.nom_tabla_valida            := em_k_x2000020.f_nom_tabla_valida           ;
+    l_reg_informacion_atributo.nom_pgm_help                := em_k_x2000020.f_nom_pgm_help               ;
+    l_reg_informacion_atributo.nom_prg_campo               := em_k_x2000020.f_nom_prg_campo              ;
+    l_reg_informacion_atributo.mca_validacion              := em_k_x2000020.f_mca_validacion             ;
+    l_reg_informacion_atributo.mca_validacion_cia          := em_k_x2000020.f_mca_validacion_cia         ;
+    l_reg_informacion_atributo.cod_lista                   := em_k_x2000020.f_cod_lista                  ;
+    l_reg_informacion_atributo.cod_transportes             := em_k_x2000020.f_cod_transportes            ;
+    l_reg_informacion_atributo.mca_modificable             := em_k_x2000020.f_mca_modificable            ;
+    l_reg_informacion_atributo.mca_baja_riesgo             := em_k_x2000020.f_mca_baja_riesgo            ;
+    l_reg_informacion_atributo.val_campo                   := em_k_x2000020.f_val_campo                  ;
+    l_reg_informacion_atributo.val_campo_ant               := em_k_x2000020.f_val_campo_ant              ;
+    l_reg_informacion_atributo.txt_campo                   := em_k_x2000020.f_txt_campo                  ;
+    l_reg_informacion_atributo.txt_campo_ant               := em_k_x2000020.f_txt_campo_ant              ;
+    l_reg_informacion_atributo.mca_inh                     := em_k_x2000020.f_mca_inh                    ;
+    l_reg_informacion_atributo.mca_unico                   := em_k_x2000020.f_mca_unico                  ;
+    l_reg_informacion_atributo.mca_inspec                  := em_k_x2000020.f_mca_inspec                 ;
+    l_reg_informacion_atributo.cod_version                 := em_k_x2000020.f_cod_version                ;
+    l_reg_informacion_atributo.nom_global_pgm_help         := em_k_x2000020.f_nom_global_pgm_help        ;
+    l_reg_informacion_atributo.num_secu_insp               := em_k_x2000020.f_num_secu_insp              ;
+    l_reg_informacion_atributo.mca_busca_por_igual_insp    := em_k_x2000020.f_mca_busca_por_igual_insp   ;
+    l_reg_informacion_atributo.mca_busca_insp              := em_k_x2000020.f_mca_busca_insp             ;
+    l_reg_informacion_atributo.tip_dato_fondo              := em_k_x2000020.f_tip_dato_fondo             ;
+    --
+    RETURN l_reg_informacion_atributo;
+    --
+ END fp_dev_reg_x2000020;
+ --
+ /* --------------------------------------------------------
+ || Aqui comienza la declaracion de subprogramas del PACKAGE
+ */ --------------------------------------------------------
+ --
+ --
+ /* -----------------------------------------------------
+ || f_dev_cod_campo:
+ ||
+ || Devuelve el código de campo del dato variable
+ || que se está tratando
+ */ -----------------------------------------------------
+ --
+ FUNCTION f_dev_cod_campo
+          RETURN a2000020.cod_campo%TYPE IS
+ BEGIN
+    --
+    RETURN fp_devuelve_c('cod_campo');
+    --
+ END f_dev_cod_campo;
+ --
+ --
+ /* -----------------------------------------------------
+ || f_dev_val_campo:
+ ||
+ || Devuelve el valor del dato variable que se está 
+ || tratando
+ */ -----------------------------------------------------
+ --
+ FUNCTION f_dev_val_campo
+          RETURN a2000020.val_campo%TYPE IS
+ BEGIN
+    --
+    RETURN fp_devuelve_c('val_campo');
+    --
+ END f_dev_val_campo;
+ --
+ --
+ /* -----------------------------------------------------
+ || f_dev_val_campo:
+ ||
+ || Devuelve el valor de un dato variable tratado 
+ || anteriormente en la operación
+ */ -----------------------------------------------------
+ --
+ FUNCTION f_dev_val_campo(p_cod_campo a2000020.cod_campo%TYPE)
+          RETURN a2000020.val_campo%TYPE IS
+ BEGIN
+    --
+    RETURN fp_devuelve_c(g_k_prefijo_dv || p_cod_campo);
+    --
+ END f_dev_val_campo;
+ --
+ --
+ /* -----------------------------------------------------
+ || f_dev_txt_campo:
+ ||
+ || Devuelve la descripción del contenido del dato 
+ || variable que se está tratando
+ */ -----------------------------------------------------
+ --
+ FUNCTION f_dev_txt_campo
+          RETURN a2000020.txt_campo%TYPE IS
+ BEGIN
+    --
+    RETURN fp_devuelve_c('txt_campo');
+    --
+ END f_dev_txt_campo;
+ --
+ --
+ /* -----------------------------------------------------
+ || f_dev_val_campo_ant:
+ ||
+ || Devuelve el valor del dato variable que tenía antes
+ || de comenzar la operación
+ */ -----------------------------------------------------
+ --
+ FUNCTION f_dev_val_campo_ant
+          RETURN x2000020.val_campo_ant%TYPE IS
+ BEGIN
+    --
+    RETURN fp_devuelve_c('val_campo_ant');
+    --
+ END f_dev_val_campo_ant;
+ --
+ --
+ /* -----------------------------------------------------
+ || f_dev_mca_deprecia:
+ ||
+ || Devuelve si el dato variable deprecia (solo para 
+ || revalorización/depreciación)
+ */ -----------------------------------------------------
+ --
+ FUNCTION f_dev_mca_deprecia 
+          RETURN g2100010.mca_deprecia_vehi%TYPE IS
+ BEGIN
+    --
+    RETURN fp_devuelve_c('mca_deprecia');
+    --
+ END f_dev_mca_deprecia;
+ --
+ --
+ /* -----------------------------------------------------
+ || f_dev_suma_aseg:
+ ||
+ || Devuelve la suma asegurada si el dato variable 
+ || está definido como tal. Es utiliado para
+ || revalorización/depreciación
+ */ -----------------------------------------------------
+ --
+ FUNCTION f_dev_suma_aseg 
+          RETURN x2000020.val_campo%TYPE IS
+ BEGIN
+    --
+    RETURN fp_devuelve_c('suma_aseg');
+    --
+ END f_dev_suma_aseg;
+ --
+ --
+ /* -----------------------------------------------------
+ || f_con:
+ ||
+ || Devuelve la información de los datos variables
+ */ -----------------------------------------------------
+ --
+ FUNCTION f_con(p_cod_cia       x2000020.cod_cia      %TYPE,
+                p_num_poliza    x2000020.num_poliza   %TYPE,
+                p_num_spto      a2000020.num_spto     %TYPE,
+                p_num_apli      a2000020.num_apli     %TYPE,
+                p_num_spto_apli a2000020.num_spto_apli%TYPE,
+                p_num_riesgo    x2000020.num_riesgo   %TYPE,
+                p_num_periodo   x2000020.num_periodo  %TYPE,
+                p_cod_campo     x2000020.cod_campo    %TYPE,
+                p_cod_ramo      a2000020.cod_ramo     %TYPE, 
+                p_cod_modalidad x2000020.cod_modalidad%TYPE,
+                p_tip_nivel     x2000020.tip_nivel    %TYPE)
+           RETURN record_atr IS
+ --
+ l_reg_atributo    record_atr;
+ --
+ BEGIN
+    --
+    trn_k_ptd.p_gen_comienzo_traza(p_nom_prg    => 'em_k_ptd_atr',
+                                   p_nom_metodo => 'f_con'       );
+    --
+    trn_k_ptd.p_gen_traza_parametro (p_nom_prg       => 'em_k_ptd_atr',
+                                     p_nom_parametro => 'p_cod_cia'   ,
+                                     p_val_parametro => p_cod_cia     );
+    --
+    trn_k_ptd.p_gen_traza_parametro (p_nom_prg       => 'em_k_ptd_atr',
+                                     p_nom_parametro => 'p_num_poliza',
+                                     p_val_parametro => p_num_poliza  );
+    --
+    trn_k_ptd.p_gen_traza_parametro (p_nom_prg       => 'em_k_ptd_atr',
+                                     p_nom_parametro => 'p_num_spto'  ,
+                                     p_val_parametro => p_num_spto    );
+    --
+    trn_k_ptd.p_gen_traza_parametro (p_nom_prg       => 'em_k_ptd_atr',
+                                     p_nom_parametro => 'p_num_apli'  ,
+                                     p_val_parametro => p_num_apli    );
+    --
+    trn_k_ptd.p_gen_traza_parametro (p_nom_prg       => 'em_k_ptd_atr'   ,
+                                     p_nom_parametro => 'p_num_spto_apli',
+                                     p_val_parametro => p_num_spto_apli  );
+    --
+    trn_k_ptd.p_gen_traza_parametro (p_nom_prg       => 'em_k_ptd_atr',
+                                     p_nom_parametro => 'p_num_riesgo',
+                                     p_val_parametro => p_num_riesgo  );
+    --
+    trn_k_ptd.p_gen_traza_parametro (p_nom_prg       => 'em_k_ptd_atr',
+                                     p_nom_parametro => 'p_num_periodo',
+                                     p_val_parametro =>  p_num_periodo );
+    --
+    trn_k_ptd.p_gen_traza_parametro (p_nom_prg       => 'em_k_ptd_atr',
+                                     p_nom_parametro => 'p_cod_campo' ,
+                                     p_val_parametro =>  p_cod_campo  );
+    --
+    trn_k_ptd.p_gen_traza_parametro (p_nom_prg       => 'em_k_ptd_atr',
+                                     p_nom_parametro => 'p_cod_ramo'  ,
+                                     p_val_parametro =>  p_cod_ramo   );
+    --
+    trn_k_ptd.p_gen_traza_parametro (p_nom_prg       => 'em_k_ptd_atr'   ,
+                                     p_nom_parametro => 'p_cod_modalidad',
+                                     p_val_parametro => p_cod_modalidad  );                                  
+    --
+    trn_k_ptd.p_gen_traza_parametro (p_nom_prg       => 'em_k_ptd_atr',
+                                     p_nom_parametro => 'p_tip_nivel' ,
+                                     p_val_parametro => p_tip_nivel   );                                  
+    --
+    --
+    IF em_k_ptd.f_dev_tip_mvto_batch IS NULL
+    THEN
+       --
+       em_k_x2000020.p_lee(p_cod_cia       => p_cod_cia      ,
+                           p_num_poliza    => p_num_poliza   ,
+                           p_num_riesgo    => p_num_riesgo   ,
+                           p_cod_modalidad => p_cod_modalidad,
+                           p_num_periodo   => p_num_periodo  ,
+                           p_tip_nivel     => p_tip_nivel    ,
+                           p_cod_campo     => p_cod_campo    );
+       --
+       l_reg_atributo := fp_dev_reg_x2000020(p_cod_cia       => p_cod_cia      ,
+                                             p_num_poliza    => p_num_poliza   ,
+                                             p_num_riesgo    => p_num_riesgo   ,
+                                             p_cod_modalidad => p_cod_modalidad,
+                                             p_num_periodo   => p_num_periodo  ,
+                                             p_tip_nivel     => p_tip_nivel    ,
+                                             p_cod_campo     => p_cod_campo    );
+       --
+    ELSE
+       --
+       NULL;
+       --
+    END IF;
+    --
+    trn_k_ptd.p_gen_final_traza(p_nom_prg    => 'em_k_ptd_atr',
+                                p_nom_metodo => 'f_con'       );
+    --
+    RETURN l_reg_atributo;
+    --
+ END f_con;
+ --
+ /* -----------------------------------------------------
+ || p_pre_constante:
+ || 
+ || Realiza todas las acciones necesarias para controlar 
+ || el pre-campo de un dato variable cuando el contenido 
+ || está declarado como constante en la tabla 
+ || df_cmn_nwt_xx_cnn
+ || Hay que recordar que también es posible indicar que 
+ || el campo se salta en la misma tabla de constantes 
+ */ -----------------------------------------------------
+ --
+ PROCEDURE p_pre_constante 
+ IS
+ BEGIN
+    --
+    trn_k_df_cmn_nwt_xx_cnn.p_pre_dv_vrb_nam_val;
+    --
+ END p_pre_constante;
+ --
+ --
+ /* -----------------------------------------------------
+ || p_pre_cto_variable:
+ || 
+ || Realiza las acciones necesarias para controlar el 
+ || pre-campo de un dato variable cuando el contenido 
+ || está declarado como valores de un concepto dados en
+ || la tabla df_cmn_nwt_xx_vrb_cnc.
+ */ -----------------------------------------------------
+ --
+ PROCEDURE p_pre_cto_variable 
+ IS
+ BEGIN
+    --
+    trn_k_df_cmn_nwt_xx_vrb_cnc.p_pre_dv_row_val;
+    --
+ END p_pre_cto_variable;
+ --
+ --
+ /* -----------------------------------------------------
+ || p_val_cto_variable:
+ || 
+ || Realiza las acciones necesarias para validar un dato
+ || un dato variable cuando el contenido está declarado 
+ || como valores de un concepto dados en la tabla 
+ || df_cmn_nwt_xx_vrb_cnc.
+ */ -----------------------------------------------------
+ -- 
+ PROCEDURE p_val_cto_variable 
+ IS
+ BEGIN
+    --
+    trn_k_df_cmn_nwt_xx_vrb_cnc.p_val_dv_row_val;
+    --
+ END p_val_cto_variable;
+ --
+ --
+ /* -----------------------------------------------------
+ || p_val_unico:
+ ||
+ || Validación de dato variable con valor unico
+ */ -----------------------------------------------------
+ --
+ PROCEDURE p_val_unico(p_cod_cia         x2000020.cod_cia        %TYPE,
+                       p_num_poliza      x2000020.num_poliza     %TYPE,
+                       p_num_riesgo      x2000020.num_riesgo     %TYPE,
+                       p_cod_campo       x2000020.cod_campo      %TYPE,
+                       p_val_campo       x2000020.val_campo      %TYPE,
+                       p_val_defecto     x2000020.val_defecto    %TYPE,
+                       p_cod_ramo        x2000030.cod_ramo       %TYPE,
+                       p_fec_efec_spto   x2000030.fec_efec_spto  %TYPE,
+                       p_fec_vcto_spto   x2000030.fec_vcto_spto  %TYPE,
+                       p_cod_tratamiento g9990200.cod_tratamiento%TYPE)
+ IS
+ BEGIN
+    --
+    em_k_unico.p_comprueba(p_cod_cia         => p_cod_cia        ,
+                           p_num_poliza      => p_num_poliza     ,
+                           p_num_riesgo      => p_num_riesgo     ,
+                           p_cod_campo       => p_cod_campo      ,
+                           p_val_campo       => p_val_campo      ,
+                           p_val_defecto     => p_val_defecto    ,
+                           p_cod_ramo        => p_cod_ramo       ,
+                           p_fec_efec_spto   => p_fec_efec_spto  ,
+                           p_fec_vcto_spto   => p_fec_vcto_spto  ,
+                           p_cod_tratamiento => p_cod_tratamiento);
+    --
+ END p_val_unico;
+ --
+ --
+ /* -----------------------------------------------------
+ || p_gen_ctrl_tecnico:
+ ||
+ || Genera un control técnico cuando se ha comprobado que
+ || se ha producido un error
+ */ -----------------------------------------------------
+ --
+ PROCEDURE p_gen_ctrl_tecnico(p_cod_cia      x2000221.cod_cia     %TYPE,
+                              p_num_poliza   x2000221.num_poliza  %TYPE,
+                              p_num_riesgo   x2000221.num_riesgo  %TYPE,
+                              p_cod_error    x2000221.cod_error   %TYPE,
+                              p_txt_error_ct x2000221.txt_error_ct%TYPE,
+                              p_obs_error    x2000221.obs_error   %TYPE) 
+ IS
+  --
+  l_reg x2000221%ROWTYPE;
+  --
+ BEGIN
+    --
+    dc_k_g2000210.p_lee(p_cod_cia   => p_cod_cia  ,
+                        p_cod_error => p_cod_error);
+    --
+    l_reg.cod_cia                := p_cod_cia                             ;
+    l_reg.num_poliza             := p_num_poliza                          ;
+    l_reg.num_riesgo             := p_num_riesgo                          ;
+    l_reg.cod_cob                := g_k_cod_cob_gen                       ;
+    l_reg.cod_secc_reas          := g_k_cod_secc_reas_gen                 ;
+    l_reg.cod_nivel_salto        := em_k_ptd.f_dev_cod_nivel_salto        ;
+    l_reg.num_menu_opcion        := em_k_ptd.f_dev_num_menu_opcion        ;
+    l_reg.num_opcion             := em_k_ptd.f_dev_num_opcion             ;
+    l_reg.cod_error              := p_cod_error                           ;
+    l_reg.cod_nivel_autorizacion := dc_k_g2000210.f_cod_nivel_autorizacion;
+    l_reg.tip_rechazo            := dc_k_g2000210.f_tip_rechazo           ;
+    l_reg.mca_spto               := dc_k_g2000210.f_mca_spto              ;
+    l_reg.mca_rf                 := dc_k_g2000210.f_mca_rf                ;
+    l_reg.mca_poliza             := dc_k_g2000210.f_mca_poliza            ;
+    l_reg.cod_sist_aut           := dc_k_g2000210.f_cod_sist_aut          ;
+    l_reg.txt_error_ct           := p_txt_error_ct                        ;
+    l_reg.obs_error              := p_obs_error                           ;
+    --
+    em_k_x2000221.p_inserta(l_reg);
+    --
+ END p_gen_ctrl_tecnico;
+ --
+ --
+ /* -----------------------------------------------------
+ || p_asg_val_campo:
+ ||
+ || Asigna el valor que se desea que el dato variable 
+ || contenga en el momento de la validación de este
+ */ -----------------------------------------------------
+ --
+ PROCEDURE p_asg_val_campo(p_val_campo a2000020.val_campo%TYPE)
+ IS
+ BEGIN
+    --
+    pp_asigna('val_campo',p_val_campo);
+    --
+ END p_asg_val_campo;
+ --
+ --
+ /* -----------------------------------------------------
+ || p_asg_txt_campo:
+ ||
+ || Asigna la descripción del dato variable en el momento
+ || de la validación de este
+ */ -----------------------------------------------------
+ --
+ PROCEDURE p_asg_txt_campo(p_txt_campo a2000020.txt_campo%TYPE) 
+ IS
+ BEGIN
+    --
+    pp_asigna('txt_campo',p_txt_campo);
+    --
+ END p_asg_txt_campo;
+ --
+ --
+ /* -----------------------------------------------------
+ || p_asg_mca_salto:
+ ||
+ || Se determina si el dato variable admitirá que el 
+ || usuario introduzca información o no
+ */ -----------------------------------------------------
+ --
+ PROCEDURE p_asg_mca_salto(p_mca_salto g2000503.mca_salto%TYPE) 
+ IS
+ BEGIN
+    --
+    pp_asigna('mca_salto',p_mca_salto);
+    --
+ END p_asg_mca_salto;
+ --
+ --
+ /* -----------------------------------------------------
+ || p_asg_mca_seleccion:
+ ||
+ || Se asigna si el dato variable en un proceso batch 
+ || tomará o no el valor dado en el buzón
+ */ -----------------------------------------------------
+ --
+ PROCEDURE p_asg_mca_seleccion(p_mca_seleccion x2000040.mca_seleccion%TYPE) 
+ IS
+ BEGIN
+    --
+    pp_asigna('mca_seleccion',p_mca_seleccion);
+    --
+ END p_asg_mca_seleccion;
+ --
+ --
+ /* -----------------------------------------------------
+ || p_asg_suma_aseg:
+ ||
+ || Se asigna la suma aseguada en caso de revalorización
+ || o depreciación y que el dato variable contenga el 
+ || capital
+ */ -----------------------------------------------------
+ --
+ PROCEDURE p_asg_suma_aseg(p_suma_aseg x2000020.val_campo%TYPE) 
+ IS
+ BEGIN
+    --
+    pp_asigna('suma_aseg',p_suma_aseg);
+    --
+ END p_asg_suma_aseg;
+ --
+END em_k_ptd_atr;
+/
+

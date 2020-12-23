@@ -1,0 +1,38 @@
+CREATE OR REPLACE PACKAGE tron2000.trn_k_df_cmn_nwt_xx_vrb_cnc AS
+ --
+ /* -------------------- DESCRIPCION --------------------
+ || Definici¿n tabla de tablas en la definicion de
+ || productos
+ */ -----------------------------------------------------
+ --
+ /* -------------------- VERSION = 1.00 -------------------- */
+ --
+ /* -------------------- MODIFICACIONES --------------------
+ || 2018/11/20 - agonza3 - 1.00
+ || Creacion
+ */ --------------------------------------------------------
+ --
+ PROCEDURE p_pre_dv_row_val;
+ --
+ /* -------------------- DESCRIPCION --------------------
+ || Devuelve el valor de la fila por defecto. Pensado 
+ || para datos variables
+ */ -----------------------------------------------------
+ --
+ PROCEDURE p_val_dv_row_val;
+ --
+ /* -------------------- DESCRIPCION --------------------
+ || Valida el valor de la fila. Pensado para datos 
+ || variables
+ */ -----------------------------------------------------
+ --
+ FUNCTION f_row_val_val(p_vrb_nam df_cmn_nwt_xx_vrb_cnc.vrb_nam%TYPE,
+                        p_row_val df_cmn_nwt_xx_vrb_cnc.row_val%TYPE)
+          RETURN df_cmn_nwt_xx_vrb_cnc.row_val_val%TYPE;
+ --
+ /* -------------------- DESCRIPCION --------------------
+ || Devuelve el valor de la fila. Pensado para formula
+ */ -----------------------------------------------------
+ --
+END trn_k_df_cmn_nwt_xx_vrb_cnc;
+/

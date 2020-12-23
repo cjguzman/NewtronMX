@@ -1,0 +1,1480 @@
+CREATE OR REPLACE PACKAGE BODY           TRP_MX_DL.EM_K_999_ATR AS
+ --
+ /* -------------------- DESCRIPCION --------------------
+ || Validacion de atibutos del ramo 999
+ ||
+ */ -----------------------------------------------------
+ --
+ /* -------------------- VERSION = 1.13 ----------------- */
+ --
+ /* ------------------ MODIFICACIONES -------------------
+ || 2020/12/01 - jaluis2 - v 1.13
+ || Se crea procedimiento p_val_cod_producto:
+ || Procedimiento que valida el dato variable cod_producto.
+ || --
+ || hsolive
+ || Se crea el procedimiento p_val_cod_modalidad
+ || Procedimiento que se usa para validar el dato variable modalidad
+ */ --------------------------------------------------------------------------
+ --
+ /* -----------------------------------------------------
+ || Aqui comienza la declaracion de variables GLOBALES
+ */ -----------------------------------------------------
+ --
+ -- Longitud del codigo Mapfre
+ g_k_cod_mapfre_long       CONSTANT NUMBER       := 12;
+ --
+ -- Indemnizacion a valor Factura
+ g_k_val_factura           CONSTANT NUMBER       := 5 ;
+ --
+ -- anio actual
+ g_k_anio_actual           CONSTANT NUMBER       := TO_NUMBER(TO_CHAR(SYSDATE,'YYYY'));
+ --
+ -- Codigo de Pais
+ g_k_cod_pais              CONSTANT VARCHAR(3)   := 'MEX';
+ --
+ /* -------------------------------------------------------------------------
+ || p_val_cod_mapfre:
+ || Procedimiento que valida que el codigo mapfre sea a 12 posiciones
+ || y exista en los catalogos internos de mapfre una vez que sea ingresada.
+ */ -------------------------------------------------------------------------
+ --
+ PROCEDURE p_val_cod_mapfre
+ IS
+    --
+    l_cod_mapfre      tron2000.em_k_ptd_atr.t_val_campo         ;
+    l_cod_marca       tron2000.em_k_ptd_rsk_mot.t_cod_marca     ;
+    l_cod_modelo      tron2000.em_k_ptd_rsk_mot.t_cod_modelo    ;
+    l_cod_sub_modelo  tron2000.em_k_ptd_rsk_mot.t_cod_sub_modelo;
+    l_t_valores       tron2000.trn_k_ptd.t_t_valores            ;
+    --
+ BEGIN
+    --Comienza la traza
+    tron2000.trn_k_ptd.p_gen_comienzo_traza(p_nom_prg    => 'em_k_999_atr'    ,
+                                            p_nom_metodo => 'p_val_cod_mapfre');
+    --
+    --Se vacian las variables globales
+    tron2000.trn_k_ptd.p_asg_ptd_val_01(tron2000.trn_k_ptd.NULO);
+    tron2000.trn_k_ptd.p_asg_ptd_val_02(tron2000.trn_k_ptd.NULO);
+    tron2000.trn_k_ptd.p_asg_ptd_val_03(tron2000.trn_k_ptd.NULO);
+    --
+    --Se asigna a la variable el valor ingresado del codigo MAPFRE
+    l_cod_mapfre := TRIM(tron2000.em_k_ptd_atr.f_dev_val_campo);
+    --
+    --Valida que el campo codigo mapfre venga informado para continuar con las validaciones
+    IF l_cod_mapfre IS NOT NULL
+    THEN
+       --
+       --Valida que el tamano del codigo mapfre ingresada sea igual a 12 posiciones
+       IF LENGTH(l_cod_mapfre) = g_k_cod_mapfre_long
+       THEN
+          -- Se aplica un substring al codigo mapfre, para obtener: el codigo marca, modelo y submodelo
+          l_cod_marca      := TO_NUMBER(SUBSTR(l_cod_mapfre, 1,4));
+          l_cod_modelo     := TO_NUMBER(SUBSTR(l_cod_mapfre, 5,4));
+          l_cod_sub_modelo := TO_NUMBER(SUBSTR(l_cod_mapfre, 9,4));
+          --
+          --Valida que la marca exista en el catalogo
+          tron2000.em_k_ptd_rsk_mot.p_val_marca(p_cod_cia     => tron2000.dc_k_ptd.f_dev_cod_cia            ,
+                                                p_cod_marca   => l_cod_marca                                ,
+                                                p_fec_validez => tron2000.em_k_ptd_gni.f_dev_fec_efec_poliza);
+          --
+          --Valida que el modelo exista en el catalogo
+          tron2000.em_k_ptd_rsk_mot.p_val_modelo(p_cod_cia     => tron2000.dc_k_ptd.f_dev_cod_cia            ,
+                                                 p_cod_marca   => l_cod_marca                                ,
+                                                 p_cod_modelo  => l_cod_modelo                               ,
+                                                 p_fec_validez => tron2000.em_k_ptd_gni.f_dev_fec_efec_poliza);
+          --
+          --Valida que el submodelo existan en el catalogo
+          tron2000.em_k_ptd_rsk_mot.p_val_sub_modelo(p_cod_cia        => tron2000.dc_k_ptd.f_dev_cod_cia            ,
+                                                     p_cod_marca      => l_cod_marca                                ,
+                                                     p_cod_modelo     => l_cod_modelo                               ,
+                                                     p_cod_sub_modelo => l_cod_sub_modelo                           ,
+                                                     p_fec_validez    => tron2000.em_k_ptd_gni.f_dev_fec_efec_poliza);
+          --
+          -- Se asignar el valor de codigo marca, modelo y submodelo a la variables globales
+          tron2000.trn_k_ptd.p_asg_ptd_val_01(p_ptd_val_01 => l_cod_marca     );
+          tron2000.trn_k_ptd.p_asg_ptd_val_02(p_ptd_val_02 => l_cod_modelo    );
+          tron2000.trn_k_ptd.p_asg_ptd_val_03(p_ptd_val_03 => l_cod_sub_modelo);
+          --
+       ELSE
+          -- Si no cumple con la longitud de 12 posiciones mostrara el siguiente error
+          tron2000.trn_k_ptd.p_gen_error(p_cod_idioma  => tron2000.trn_k_ptd.f_dev_cod_idioma                                          ,
+                                         p_cod_mensaje => 20005                                                                        ,
+                                         p_t_valores   => l_t_valores                                                                  ,
+                                         p_pre_mensaje => tron2000.trn_k_ptd.nulo                                                      ,
+                                         p_pos_mensaje => 'LA LONGITUD DEL CODIGO MAPFRE NO TIENE LA LONGITUD CORRECTA:[CODIGO MAPFRE]');
+          --
+       END IF;
+       --
+    END IF;
+    --
+    -- Termina la traza
+    tron2000.trn_k_ptd.p_gen_final_traza(p_nom_prg    => 'em_k_999_atr'    ,
+                                         p_nom_metodo => 'p_val_cod_mapfre');
+    --
+ END p_val_cod_mapfre;
+ --
+ /* ----------------------------------------------------------------------
+ || p_pre_cod_marca:
+ || Procedimiento donde se obtiene el codigo marca
+ || del codigo mapfre la cual se asigna al campo codigo marca.
+ */ ----------------------------------------------------------------------
+ --
+ PROCEDURE p_pre_cod_marca
+ IS
+    --
+    l_cod_marca tron2000.em_k_ptd_atr.t_val_campo;
+    --
+ BEGIN
+    -- Comienza la traza
+    tron2000.trn_k_ptd.p_gen_comienzo_traza(p_nom_prg    => 'em_k_999_atr'   ,
+                                            p_nom_metodo => 'p_pre_cod_marca');
+    -- Se guarda el valor cod marca en la variable
+    l_cod_marca := tron2000.trn_k_ptd.f_dev_ptd_val_01;
+    --
+    -- Valida que el campo codigo mapfre venga informado para continuar con las validaciones
+    IF l_cod_marca IS NOT NULL
+    THEN
+       -- Se asigna el campo codigo marca
+       tron2000.em_k_ptd_atr.p_asg_val_campo(p_val_campo   => l_cod_marca);
+       --
+       -- Se valida el codigo marca del vehiculo
+       tron2000.em_k_ptd_rsk_mot.p_val_marca(p_cod_cia     => tron2000.dc_k_ptd.f_dev_cod_cia            ,
+                                             p_cod_marca   => TO_NUMBER(l_cod_marca)                     ,
+                                             p_fec_validez => tron2000.em_k_ptd_gni.f_dev_fec_efec_poliza);
+       --
+       --Se inhabilita el campo de descripcion marca
+       tron2000.em_k_ptd_gni.p_asg_mca_salto(p_mca_salto   => tron2000.trn_k_ptd.SI);
+    END IF;
+    --
+    --Termina traza
+    tron2000.trn_k_ptd.p_gen_final_traza(p_nom_prg    => 'em_k_999_atr'   ,
+                                         p_nom_metodo => 'p_pre_cod_marca');
+    --
+ END p_pre_cod_marca;
+ --
+ /* -------------------------------------------------------------------------
+ || p_pre_cod_modelo:
+ || Procedimiento donde se obtiene el codigo modelo
+ || del codigo mapfre la cual se asigna al campo codigo modelo.
+ */ -------------------------------------------------------------------------
+  --
+ PROCEDURE p_pre_cod_modelo
+ IS
+    --
+    l_cod_modelo tron2000.em_k_ptd_atr.t_val_campo;
+    --
+ BEGIN
+    --Comienza la traza
+    tron2000.trn_k_ptd.p_gen_comienzo_traza(p_nom_prg    => 'em_k_999_atr'    ,
+                                            p_nom_metodo => 'p_pre_cod_modelo');
+    -- Se guarda el valor cod modelo en la variable
+    l_cod_modelo := tron2000.trn_k_ptd.f_dev_ptd_val_02;
+    --
+    --
+    --Valida que el campo codigo mapfre venga informado para continuar con las validaciones
+    IF l_cod_modelo IS NOT NULL
+    THEN
+       --Se asigna el campo codigo modelo
+       tron2000.em_k_ptd_atr.p_asg_val_campo(p_val_campo    => l_cod_modelo);
+       --
+       -- Se valida el codigo modelo del vehiculo
+       tron2000.em_k_ptd_rsk_mot.p_val_modelo(p_cod_cia     => tron2000.dc_k_ptd.f_dev_cod_cia               ,
+                                              p_cod_marca   => TO_NUMBER(tron2000.trn_k_ptd.f_dev_ptd_val_01),
+                                              p_cod_modelo  => TO_NUMBER(l_cod_modelo)                       ,
+                                              p_fec_validez => tron2000.em_k_ptd_gni.f_dev_fec_efec_poliza   );
+       --
+       --Se inhabilita el campo de descripcion codigo modelo
+       tron2000.em_k_ptd_gni.p_asg_mca_salto(p_mca_salto    => tron2000.trn_k_ptd.SI);
+       --
+    END IF;
+    --
+    -- Termina traza
+    tron2000.trn_k_ptd.p_gen_final_traza(p_nom_prg    => 'em_k_999_atr'    ,
+                                         p_nom_metodo => 'p_pre_cod_modelo');
+    --
+ END p_pre_cod_modelo;
+ --
+ /* -----------------------------------------------------------------
+ || p_pre_cod_sub_modelo:
+ || Procedimiento donde se obtiene el codigo sub modelo
+ || del codigo la cual se asigna al campo codigo sub modelo.
+ */ -----------------------------------------------------------------
+ --
+ PROCEDURE p_pre_cod_sub_modelo
+ IS
+    --
+    l_cod_sub_modelo tron2000.em_k_ptd_atr.t_val_campo;
+    --
+ BEGIN
+    --
+    --Comienza la traza
+    tron2000.trn_k_ptd.p_gen_comienzo_traza(p_nom_prg    => 'em_k_999_atr'        ,
+                                            p_nom_metodo => 'p_pre_cod_sub_modelo');
+    -- Se guarda el valor cod modelo en la variable
+    l_cod_sub_modelo := tron2000.trn_k_ptd.f_dev_ptd_val_03;
+    --
+    --Valida que el campo codigo mapfre venga informado para continuar con las validaciones
+    IF l_cod_sub_modelo IS NOT NULL
+    THEN
+       --Se asigna el campo codigo sub modelo
+       tron2000.em_k_ptd_atr.p_asg_val_campo(p_val_campo => l_cod_sub_modelo);
+       --
+       -- Se valida el codigo sub modelo del vehiculo
+       tron2000.em_k_ptd_rsk_mot.p_val_sub_modelo(p_cod_cia        => tron2000.dc_k_ptd.f_dev_cod_cia                                              ,
+                                                  p_cod_marca      => TO_NUMBER(tron2000.em_k_ptd_atr.f_dev_val_campo(p_cod_campo => 'COD_MARCA' )),
+                                                  p_cod_modelo     => TO_NUMBER(tron2000.em_k_ptd_atr.f_dev_val_campo(p_cod_campo => 'COD_MODELO')),
+                                                  p_cod_sub_modelo => TO_NUMBER(l_cod_sub_modelo                                                  ),
+                                                  p_fec_validez    => tron2000.em_k_ptd_gni.f_dev_fec_efec_poliza                                  );
+       --
+       --Se inhabilita el campo de descripcion sub modelo
+       tron2000.em_k_ptd_gni.p_asg_mca_salto(p_mca_salto => tron2000.trn_k_ptd.SI);
+       --
+       --Se vacian las variables globales
+       tron2000.trn_k_ptd.p_asg_ptd_val_01(p_ptd_val_01  => tron2000.trn_k_ptd.NULO);
+       tron2000.trn_k_ptd.p_asg_ptd_val_02(p_ptd_val_02  => tron2000.trn_k_ptd.NULO);
+       tron2000.trn_k_ptd.p_asg_ptd_val_03(p_ptd_val_03  => tron2000.trn_k_ptd.NULO);
+       --
+    END IF;
+    --
+    -- Termina la traza
+    tron2000.trn_k_ptd.p_gen_final_traza(p_nom_prg    => 'em_k_999_atr'        ,
+                                         p_nom_metodo => 'p_pre_cod_sub_modelo');
+    --
+ END p_pre_cod_sub_modelo;
+ --
+ /* --------------------------------------------------------------------------
+ || p_val_cod_marca:
+ || Valida que exista el codigo de la marca del vehiculo
+ || en el catalogo y recupera su descripcion.
+ */ --------------------------------------------------------------------------
+ --
+ PROCEDURE p_val_cod_marca
+ IS
+ BEGIN
+    -- Comienza la traza
+    tron2000.trn_k_ptd.p_gen_comienzo_traza(p_nom_prg    => 'em_k_999_atr'   ,
+                                            p_nom_metodo => 'p_val_cod_marca');
+    --
+    -- Se valida el codigo marca del vehiculo
+    tron2000.em_k_ptd_rsk_mot.p_val_marca(p_cod_cia     => tron2000.dc_k_ptd.f_dev_cod_cia                 ,
+                                          p_cod_marca   => TO_NUMBER(tron2000.em_k_ptd_atr.f_dev_val_campo),
+                                          p_fec_validez => tron2000.em_k_ptd_gni.f_dev_fec_efec_poliza     );
+    --
+    --Termina traza
+    tron2000.trn_k_ptd.p_gen_final_traza(p_nom_prg    => 'em_k_999_atr'   ,
+                                         p_nom_metodo => 'p_val_cod_marca');
+    --
+ END p_val_cod_marca;
+  --
+ /* --------------------------------------------------------------------------
+ || p_val_cod_modelo:
+ || Valida que exista el codigo de modelo del vehiculo
+ || en el catalogo y recupera su descripcion.
+ */ --------------------------------------------------------------------------
+ --
+ PROCEDURE p_val_cod_modelo
+ IS
+ BEGIN
+    -- Comienza la traza
+    tron2000.trn_k_ptd.p_gen_comienzo_traza(p_nom_prg    => 'em_k_999_atr'    ,
+                                            p_nom_metodo => 'p_val_cod_modelo');
+    --
+    -- Se valida el codigo modelo del vehiculo
+    tron2000.em_k_ptd_rsk_mot.p_val_modelo(p_cod_cia     => tron2000.dc_k_ptd.f_dev_cod_cia                                              ,
+                                           p_cod_marca   => TO_NUMBER(tron2000.em_k_ptd_atr.f_dev_val_campo(p_cod_campo => 'COD_MARCA') ),
+                                           p_cod_modelo  => TO_NUMBER(tron2000.em_k_ptd_atr.f_dev_val_campo)                             ,
+                                           p_fec_validez => tron2000.em_k_ptd_gni.f_dev_fec_efec_poliza                                  );
+    --
+    --Termina traza
+    tron2000.trn_k_ptd.p_gen_final_traza(p_nom_prg    => 'em_k_999_atr'    ,
+                                         p_nom_metodo => 'p_val_cod_modelo');
+    --
+ END p_val_cod_modelo;
+ --
+ /* --------------------------------------------------------------------------
+ || p_val_cod_sub_modelo:
+ || Valida que exista el codigo de submodelo del vehiculo
+ || en el catalogo y recupera su descripcion.
+ */ --------------------------------------------------------------------------
+ --
+ PROCEDURE p_val_cod_sub_modelo
+ IS
+ BEGIN
+    -- Comienza la traza
+    tron2000.trn_k_ptd.p_gen_comienzo_traza(p_nom_prg    => 'em_k_999_atr'        ,
+                                            p_nom_metodo => 'p_val_cod_sub_modelo');
+    --
+    -- Se valida el codigo sub modelo del vehiculo
+    tron2000.em_k_ptd_rsk_mot.p_val_sub_modelo(p_cod_cia        => tron2000.dc_k_ptd.f_dev_cod_cia                                              ,
+                                               p_cod_marca      => TO_NUMBER(tron2000.em_k_ptd_atr.f_dev_val_campo(p_cod_campo => 'COD_MARCA' )),
+                                               p_cod_modelo     => TO_NUMBER(tron2000.em_k_ptd_atr.f_dev_val_campo(p_cod_campo => 'COD_MODELO')),
+                                               p_cod_sub_modelo => TO_NUMBER(tron2000.em_k_ptd_atr.f_dev_val_campo)                             ,
+                                               p_fec_validez    => tron2000.em_k_ptd_gni.f_dev_fec_efec_poliza                                  );
+    --
+    --Termina traza
+    tron2000.trn_k_ptd.p_gen_final_traza(p_nom_prg    => 'em_k_999_atr'        ,
+                                         p_nom_metodo => 'p_val_sub_cod_modelo');
+    --
+ END p_val_cod_sub_modelo;
+ --
+ /* --------------------------------------------------------------------------
+ || p_pre_num_factura:
+ || Comprueba que el tipo de indemnizacion sea diferente de (Valor Factura).
+ */ --------------------------------------------------------------------------
+ --
+ PROCEDURE p_pre_num_factura
+ IS
+ BEGIN
+    -- Comienza traza
+    tron2000.trn_k_ptd.p_gen_comienzo_traza(p_nom_prg    => 'em_k_999_atr'     ,
+                                            p_nom_metodo => 'p_pre_num_factura');
+    --
+    -- Valida si tipo de indemnizacion es diferente de 5 (valor factura)
+    IF  TO_NUMBER(tron2000.em_k_ptd_atr.f_dev_val_campo(p_cod_campo  => 'TIP_INDEM')) <> g_k_val_factura
+    THEN
+       --Se asigna al campo num factura el valor de NULL
+       tron2000.em_k_ptd_gni.p_asg_val_campo (p_val_campo => tron2000.trn_k_ptd.NULO);
+       --
+       --Se inhabilita el campo de num factura
+       tron2000.em_k_ptd_gni.p_asg_mca_salto (p_mca_salto => tron2000.trn_k_ptd.SI  );
+       --
+    END IF;
+    --
+    -- Termina traza
+    tron2000.trn_k_ptd.p_gen_final_traza(p_nom_prg    => 'em_k_999_atr'     ,
+                                         p_nom_metodo => 'p_pre_num_factura');
+    --
+ END  p_pre_num_factura;
+ --
+ /* --------------------------------------------------------------------------
+ || p_val_num_factura:
+ || Comprueba que el tipo de indemnizacion sea igual (Valor Factura).
+ */ --------------------------------------------------------------------------
+ --
+ PROCEDURE p_val_num_factura
+ IS
+    --
+    l_t_valores   tron2000.trn_k_ptd.t_t_valores;
+    --
+ BEGIN
+    -- Comienza la traza
+    tron2000.trn_k_ptd.p_gen_comienzo_traza(p_nom_prg    => 'em_k_999_atr'     ,
+                                            p_nom_metodo => 'p_val_num_factura');
+    --
+    -- Valida si tipo de indemnizacion es igual 5 (valor factura)
+    IF     TO_NUMBER(tron2000.em_k_ptd_atr.f_dev_val_campo(p_cod_campo => 'TIP_INDEM')) = g_k_val_factura
+       AND tron2000.em_k_ptd_atr.f_dev_val_campo                                        IS NULL
+    THEN
+       --Si no cumple con la validacion mostrara el siguiente error
+       tron2000.trn_k_ptd.p_gen_error(p_cod_idioma       => tron2000.trn_k_ptd.f_dev_cod_idioma,
+                                      p_cod_mensaje      => 40202                              ,
+                                      p_t_valores        => l_t_valores                        ,
+                                      p_pre_mensaje      => tron2000.trn_k_ptd.NULO            ,
+                                      p_pos_mensaje      => ':[NUMERO FACTURA]'                );
+       --
+    END IF;
+    --
+    -- Termina traza
+    tron2000.trn_k_ptd.p_gen_final_traza(p_nom_prg    => 'em_k_999_atr'     ,
+                                         p_nom_metodo => 'p_val_num_factura');
+    --
+ END p_val_num_factura;
+ --
+ /* --------------------------------------------------------------------------
+ || p_val_num_serie:
+ || Procedimiento donde se validara el campo Numero de serie
+ */ --------------------------------------------------------------------------
+ --
+ PROCEDURE p_val_num_serie
+ IS
+    --
+    l_t_valores    tron2000.trn_k_ptd.t_t_valores   ;
+    l_num_serie    tron2000.em_k_ptd_atr.t_val_campo;
+    --
+ BEGIN
+    --Comienza la traza
+    tron2000.trn_k_ptd.p_gen_comienzo_traza(p_nom_prg    => 'em_k_999_atr'   ,
+                                            p_nom_metodo => 'p_val_num_serie');
+    --
+    -- Se guarda el valor num serie en la variable
+    l_num_serie := tron2000.em_k_ptd_atr.f_dev_val_campo;
+    --
+    --Valida que el campo no venga Nulo para continuar con el flujo de emision y suplementos
+    IF       l_num_serie                          IS NULL
+       AND ( tron2000.em_k_ptd.f_dev_tip_emision  IN (tron2000.em_k_ptd_gni.tip_emision_pol, tron2000.em_k_ptd_gni.tip_emision_spto))
+    THEN
+       -- Si no cumple con la validacion mostrara el siguiente error
+       tron2000.trn_k_ptd.p_gen_error(p_cod_idioma  => tron2000.trn_k_ptd.f_dev_cod_idioma,
+                                      p_cod_mensaje => 20003                              ,
+                                      p_t_valores   => l_t_valores                        ,
+                                      p_pre_mensaje => tron2000.trn_k_ptd.nulo            ,
+                                      p_pos_mensaje => ':[NUMERO SERIE]'                  );
+       --
+    ELSIF tron2000.em_k_ptd.f_dev_tip_emision IN (tron2000.em_k_ptd_gni.tip_emision_pol, tron2000.em_k_ptd_gni.tip_emision_spto)
+    THEN
+       -- Validar la duplicidad
+       tron2000.em_k_ptd_atr.p_val_unico(p_cod_cia         =>  tron2000.dc_k_ptd.f_dev_cod_cia          ,
+                                         p_num_poliza      =>  tron2000.em_k_ptd_gni.f_dev_num_poliza   ,
+                                         p_num_riesgo      =>  tron2000.em_k_ptd_rsk.f_dev_num_riesgo   ,
+                                         p_cod_campo       =>  tron2000.em_k_ptd_atr.f_dev_cod_campo    ,
+                                         p_val_campo       =>  l_num_serie                              ,
+                                         p_val_defecto     =>  tron2000.trn_k_ptd.SI                    ,
+                                         p_cod_ramo        =>  tron2000.em_k_ptd_gni.f_dev_cod_ramo     ,
+                                         p_fec_efec_spto   =>  tron2000.em_k_ptd_gni.f_dev_fec_efec_spto,
+                                         p_fec_vcto_spto   =>  tron2000.em_k_ptd_gni.f_dev_fec_vcto_spto,
+                                         p_cod_tratamiento =>  tron2000.em_k_ptd.TRATAMIENTO_AUTOMOVILES);
+       --
+    END IF;
+    --
+    -- Termina la traza
+    tron2000.trn_k_ptd.p_gen_final_traza(p_nom_prg    => 'em_k_999_atr'   ,
+                                         p_nom_metodo => 'p_val_num_serie');
+    --
+ END p_val_num_serie;
+ --
+ /* -----------------------------------------------------
+ || p_val_cod_amb_circulacion
+ ||
+ || Procedimiento que valida que ambito de circulacion
+ || proporcionado sea correcto en funcion de ramo y
+ || codigo de producto
+ */ -----------------------------------------------------
+ --
+ PROCEDURE p_val_cod_amb_circulacion
+ IS
+    --
+    l_cod_producto           ta999005.cod_producto        %TYPE;
+    l_cod_amb_circulacion    ta999005.cod_amb_circulacion %TYPE;
+    --
+    l_reg                    ta999005%ROWTYPE                  ;
+    --
+ BEGIN
+    --
+    tron2000.trn_k_ptd.p_gen_comienzo_traza(p_nom_prg    => 'em_k_999_atr'             ,
+                                            p_nom_metodo => 'p_val_cod_amb_circulacion');
+    --
+    l_cod_producto           := TO_NUMBER(tron2000.em_k_ptd_atr.f_dev_val_campo(p_cod_campo  => 'COD_PRODUCTO'   ));
+    l_cod_amb_circulacion    := TO_NUMBER(tron2000.em_k_ptd_atr.f_dev_val_campo);
+    --
+    l_reg := em_k_ta999005.f_lee_vigente (p_cod_cia                => tron2000.dc_k_ptd.f_dev_cod_cia             ,
+                                          p_cod_ramo               => tron2000.em_k_ptd_gni.f_dev_cod_ramo        ,
+                                          p_cod_producto           => l_cod_producto                              ,
+                                          p_cod_amb_circulacion    => l_cod_amb_circulacion                       ,
+                                          p_fec_validez            => tron2000.em_k_ptd_gni.f_dev_fec_efec_poliza );
+    --
+    -- Validamos y asignamos la descripcion
+    tron2000.em_k_ptd_atr.p_val_cto_variable;
+    --
+    tron2000.trn_k_ptd.p_gen_final_traza(p_nom_prg    => 'em_k_999_atr'              ,
+                                         p_nom_metodo => 'p_val_cod_amb_circulacion' );
+    --
+ END p_val_cod_amb_circulacion;
+ --
+ /* -----------------------------------------------------
+ || p_pre_val_remolque:
+ || Valida Si MCA_REMOLQUE trae una S, dejara campo val_remolque editable
+ || si MCA_REMOLQUE trae una N, limpiara el campo val_remolque.
+ */ -----------------------------------------------------
+ --
+ PROCEDURE p_pre_val_remolque
+ IS
+ BEGIN
+    --Comienza traza
+    tron2000.trn_k_ptd.p_gen_comienzo_traza(p_nom_prg    => 'em_k_999_atr'      ,
+                                            p_nom_metodo => 'p_pre_val_remolque');
+    --
+    -- Si MCA_REMOLQUE trae una N.
+    IF tron2000.em_k_ptd_atr.f_dev_val_campo(p_cod_campo => 'MCA_REMOLQUE') = tron2000.trn_k_ptd.NO
+    THEN
+       -- Salta y limpia campo val_remolque
+       tron2000.em_k_ptd_gni.p_asg_mca_salto(p_mca_salto => tron2000.trn_k_ptd.SI  );
+       tron2000.em_k_ptd_gni.p_asg_val_campo(p_val_campo => tron2000.trn_k_ptd.NULO);
+       --
+    END IF;
+    --
+    --Termina Traza
+    tron2000.trn_k_ptd.p_gen_final_traza(p_nom_prg    => 'em_k_999_atr'      ,
+                                         p_nom_metodo => 'p_pre_val_remolque');
+    --
+ END p_pre_val_remolque;
+ --
+ /* -----------------------------------------------------
+ || p_val_val_remolque:
+ || Valida valor introducido en val_remolque
+ || emitiendo error si es menor o igual a cero.
+ */ -----------------------------------------------------
+ --
+ PROCEDURE p_val_val_remolque
+ IS
+ BEGIN
+    --Comienza la traza
+    tron2000.trn_k_ptd.p_gen_comienzo_traza(p_nom_prg    => 'em_k_999_atr'      ,
+                                            p_nom_metodo => 'p_val_val_remolque');
+    --
+    -- Valida si el valor introducido sea mayor a cero, caso contrario emite error.
+    tron2000.trn_k_ptd.p_val_mayor(p_valor_campo => TO_NUMBER(tron2000.em_k_ptd_atr.f_dev_val_campo),
+                                   p_valor_min   => tron2000.trn_k_ptd.CERO                         ,
+                                   p_cod_idioma  => tron2000.trn_k_ptd.f_dev_cod_idioma             );
+    --
+  --Termina la traza
+    tron2000.trn_k_ptd.p_gen_final_traza(p_nom_prg    => 'em_k_999_atr'      ,
+                                         p_nom_metodo => 'p_val_val_remolque');
+    --
+ END p_val_val_remolque;
+ --
+ /* -----------------------------------------------------
+ || p_val_mca_remolque:
+ || Valida Si MCA_REMOLQUE es diferente de S o N, emitira mensaje de error y
+ || no podra continuar.
+ */ -----------------------------------------------------
+ --
+ PROCEDURE p_val_mca_remolque
+ IS
+    --
+    l_t_valores tron2000.trn_k_ptd.t_t_valores;
+    --
+ BEGIN
+    -- Comienza traza
+    tron2000.trn_k_ptd.p_gen_comienzo_traza(p_nom_prg    => 'em_k_999_atr'      ,
+                                            p_nom_metodo => 'p_val_mca_remolque');
+    --
+    --Valida que valor ingresado es diferente de N o S.
+    IF    tron2000.em_k_ptd_atr.f_dev_val_campo NOT IN ( tron2000.trn_k_ptd.SI, tron2000.trn_k_ptd.NO)
+    THEN
+       --Si cumple emite mensaje de error.
+       tron2000.trn_k_ptd.p_gen_error(p_cod_idioma  => tron2000.trn_k_ptd.f_dev_cod_idioma,
+                                      p_cod_mensaje => 20010                              ,
+                                      p_t_valores   => l_t_valores                        ,
+                                      p_pre_mensaje => tron2000.trn_k_ptd.nulo            ,
+                                      p_pos_mensaje => 'MARCA REMOLQUE'                   );
+       --
+    END IF;
+    --
+    --Termina la traza
+    tron2000.trn_k_ptd.p_gen_final_traza(p_nom_prg    => 'em_k_999_atr'      ,
+                                         p_nom_metodo => 'p_val_mca_remolque');
+    --
+ END p_val_mca_remolque;
+ --
+ /* ----------------------------------------------------------------------
+ || p_pre_des_remolque:
+ || Valida que en caso de tener N la marca de remolque, se limpie la
+ || informacion del campo descripcion del remolque.
+ */ ----------------------------------------------------------------------
+ --
+ PROCEDURE p_pre_des_remolque
+ IS
+    --
+    l_mca_remolque tron2000.em_k_ptd_atr.t_val_campo;
+    --
+ BEGIN
+    -- Inicia traza
+    tron2000.trn_k_ptd.p_gen_comienzo_traza(p_nom_prg    => 'em_k_999_atr'      ,
+                                            p_nom_metodo => 'p_pre_des_remolque');
+    --
+    --Se asigna a la variable el valor ingresado en el campo marca de remolque
+    l_mca_remolque := tron2000.em_k_ptd_atr.f_dev_val_campo( p_cod_campo  => 'MCA_REMOLQUE');
+    --
+    -- Valida si el valor de la marca de remolque es igual a N
+    IF l_mca_remolque = tron2000.trn_k_ptd.NO
+    THEN
+       -- Salta y limpia el campo descripcion del remolque
+       tron2000.em_k_ptd_gni.p_asg_mca_salto(p_mca_salto => tron2000.trn_k_ptd.SI  );
+       tron2000.em_k_ptd_atr.p_asg_txt_campo(p_txt_campo => tron2000.trn_k_ptd.NULO);
+       tron2000.em_k_ptd_gni.p_asg_val_campo(p_val_campo => tron2000.trn_k_ptd.NULO);
+       --
+    END IF;
+    --
+    -- Termina traza
+    tron2000.trn_k_ptd.p_gen_final_traza(p_nom_prg    => 'em_k_999_atr'      ,
+                                         p_nom_metodo => 'p_pre_des_remolque');
+    --
+ END p_pre_des_remolque;
+ --
+ /* --------------------------------------------------------------------------
+ || p_pre_fol_solicitud:
+ || Valida si el campo asiga Numero de Folio (dato variable FOL_SOLICITUD )
+ || es nulo entonces colocara un 0 en el campo
+ */ --------------------------------------------------------------------------
+ --
+ PROCEDURE p_pre_fol_solicitud
+ IS
+ BEGIN
+    --
+    --Comienza la traza
+    tron2000.trn_k_ptd.p_gen_comienzo_traza(p_nom_prg    => 'em_k_999_atr'       ,
+                                            p_nom_metodo => 'p_pre_fol_solicitud');
+    --
+    -- Se valida que el valor folio solicitud o validamos en el caso del suplemento si viene un folio de la emision se asigne a cero
+    IF tron2000.em_k_ptd_atr.f_dev_val_campo IS NULL
+       OR NVL(tron2000.em_k_ptd_atr.f_dev_val_campo_ant,0) = tron2000.em_k_ptd_atr.f_dev_val_campo
+    THEN
+       -- Se asigna un cero si el campo Numero de Folio (dato variable FOL_SOLICITUD ) viene nulo
+       tron2000.em_k_ptd_atr.p_asg_val_campo(tron2000.trn_k_ptd.CERO);
+       --
+    END IF;
+    --
+    -- Termina la traza
+    tron2000.trn_k_ptd.p_gen_final_traza(p_nom_prg    => 'em_k_999_atr'       ,
+                                         p_nom_metodo => 'p_pre_fol_solicitud');
+    --
+ END p_pre_fol_solicitud;
+ --
+ /* -------------------------------------------------------------------------
+ || p_val_mca_salvamento:
+ || Valida que MCA_SALVAMENTO sean diferentes de S o N y si lo son manda un
+ || mensaje de error.
+ */ -------------------------------------------------------------------------
+ --
+ PROCEDURE p_val_mca_salvamento
+ IS
+    --
+    l_t_valores   tron2000.trn_k_ptd.t_t_valores;
+    --
+ BEGIN
+    --
+    tron2000.trn_k_ptd.p_gen_comienzo_traza(p_nom_prg    => 'em_k_999_atr'        ,
+                                            p_nom_metodo => 'p_val_mca_salvamento');
+    --
+    --Valida que sean diferentes de S o N
+    IF   tron2000.em_k_ptd_atr.f_dev_val_campo NOT IN(tron2000.trn_k_ptd.SI, tron2000.trn_k_ptd.NO)
+    THEN
+       -- Si no cumple las condiciones manda el mensaje de error
+       tron2000.trn_k_ptd.p_gen_error(p_cod_idioma  => tron2000.trn_k_ptd.f_dev_cod_idioma,
+                                      p_cod_mensaje => 20010                              ,
+                                      p_t_valores   => l_t_valores                        ,
+                                      p_pre_mensaje => tron2000.trn_k_ptd.nulo            ,
+                                      p_pos_mensaje => ':[MARCA SALVAMENTO]'              );
+       --
+    END IF;
+    --
+    tron2000.trn_k_ptd.p_gen_final_traza(p_nom_prg    => 'em_k_999_atr'        ,
+                                         p_nom_metodo => 'p_val_mca_salvamento');
+    --
+ END p_val_mca_salvamento;
+ --
+ /* -------------------------------------------------------------------------
+ || p_pre_fec_factura:
+ || Comprueba tipo de indemnizacion sea diferente de (Valor Factura).
+ */ -------------------------------------------------------------------------
+ --
+ PROCEDURE p_pre_fec_factura
+ IS
+ BEGIN
+    -- Comienza traza
+    tron2000.trn_k_ptd.p_gen_comienzo_traza(p_nom_prg    => 'em_k_999_atr'     ,
+                                            p_nom_metodo => 'p_pre_fec_factura');
+    --
+    -- Valida si tipo de indemnizacion es diferente de 5 (valor factura)
+    IF  TO_NUMBER(tron2000.em_k_ptd_atr.f_dev_val_campo(p_cod_campo  => 'TIP_INDEM')) <> g_k_val_factura
+    THEN
+       --Se asigna al campo num factura el valor de NULL
+       tron2000.em_k_ptd_gni.p_asg_val_campo (p_val_campo => tron2000.trn_k_ptd.NULO);
+       --
+       --Se inhabilita el campo de num factura
+       tron2000.em_k_ptd_gni.p_asg_mca_salto (p_mca_salto => tron2000.trn_k_ptd.SI  );
+       --
+    END IF;
+    --
+    -- Termina traza
+    tron2000.trn_k_ptd.p_gen_final_traza(p_nom_prg    => 'em_k_999_atr'     ,
+                                         p_nom_metodo => 'p_pre_fec_factura');
+    --
+ END p_pre_fec_factura;
+ --
+ /* -----------------------------------------------------
+ || p_val_cod_tip_vehi
+ ||
+ || Procedimiento que valida que tipo de vehiculo
+ || proporcionado sea correcto en funcion del
+ || codigo de producto y ambito de circulacion
+ */ -----------------------------------------------------
+ --
+ PROCEDURE p_val_cod_tip_vehi
+ IS
+    --
+    l_cod_tip_vehi        ta999006.cod_tip_vehi        %TYPE;
+    l_cod_producto        ta999006.cod_producto        %TYPE;
+    l_cod_amb_circulacion ta999006.cod_amb_circulacion %TYPE;
+    --
+    l_reg                 ta999006%ROWTYPE                  ;
+    --
+ BEGIN
+    --
+    tron2000.trn_k_ptd.p_gen_comienzo_traza(p_nom_prg    => 'em_k_999_atr'      ,
+                                            p_nom_metodo => 'p_val_cod_tip_vehi');
+    --
+    l_cod_tip_vehi           := TO_NUMBER(tron2000.em_k_ptd_atr.f_dev_val_campo);
+    l_cod_producto           := TO_NUMBER(tron2000.em_k_ptd_atr.f_dev_val_campo(p_cod_campo  => 'COD_PRODUCTO'   ));
+    l_cod_amb_circulacion    := TO_NUMBER(tron2000.em_k_ptd_atr.f_dev_val_campo(p_cod_campo  => 'COD_AMB_CIRCULACION'));
+    --
+    l_reg := em_k_ta999006.f_lee_vigente (p_cod_cia             => tron2000.dc_k_ptd.f_dev_cod_cia             ,
+                                          p_cod_sector          => tron2000.em_k_ptd_gni.f_dev_cod_sector      ,
+                                          p_cod_ramo            => tron2000.em_k_ptd_gni.f_dev_cod_ramo        ,
+                                          p_num_poliza_grupo    => tron2000.em_k_ptd_gni.f_dev_num_poliza_grupo,
+                                          p_num_contrato        => tron2000.em_k_ptd_gni.f_dev_num_contrato    ,
+                                          p_num_subcontrato     => tron2000.em_k_ptd_gni.f_dev_num_subcontrato ,
+                                          p_cod_canal3          => tron2000.em_k_ptd_gni.f_dev_cod_canal3      ,
+                                          p_cod_producto        => l_cod_producto                              ,
+                                          p_cod_amb_circulacion => l_cod_amb_circulacion                       ,
+                                          p_cod_tip_vehi        => l_cod_tip_vehi                              ,
+                                          p_fec_validez         => tron2000.em_k_ptd_gni.f_dev_fec_efec_poliza );
+    -- Validamos y asignamos la descripcion
+    tron2000.em_k_ptd_rsk_mot.p_val_tip_vehi(p_cod_cia      => tron2000.dc_k_ptd.f_dev_cod_cia            ,
+                                             p_cod_tip_vehi => l_cod_tip_vehi                             ,
+                                             p_fec_validez  => tron2000.em_k_ptd_gni.f_dev_fec_efec_poliza);
+    --
+    tron2000.trn_k_ptd.p_gen_final_traza(p_nom_prg    => 'em_k_999_atr'       ,
+                                         p_nom_metodo => 'p_val_cod_tip_vehi' );
+    --
+ END p_val_cod_tip_vehi;
+ --
+ /* -----------------------------------------------------
+ || p_val_cod_uso_alt
+ ||
+ || Procedimiento que valida que el codigo de uso alterno
+ || exista, este vigente, y sea distinto y con nivel de
+ || riesgo menor o igual al codigo de uso principal
+ */ -----------------------------------------------------
+ --
+ PROCEDURE p_val_cod_uso_alt
+ IS
+    --
+    l_cod_uso_vehi_alt     ta999007.cod_uso_vehi    %TYPE;
+    l_cod_uso_vehi         ta999007.cod_uso_vehi    %TYPE;
+    l_cod_tip_vehi         ta999007.cod_tip_vehi    %TYPE;
+    l_cod_producto         ta999007.cod_producto    %TYPE;
+    --
+    l_t_valores            tron2000.trn_k_ptd.t_t_valores;
+    l_reg_uso              ta999007%ROWTYPE              ;
+    l_reg_alt              ta999007%ROWTYPE              ;
+    --
+ BEGIN
+    --
+    tron2000.trn_k_ptd.p_gen_comienzo_traza(p_nom_prg    => 'em_k_999_atr'     ,
+                                            p_nom_metodo => 'p_val_cod_uso_alt');
+    --
+    l_cod_uso_vehi_alt := TO_NUMBER(tron2000.em_k_ptd_atr.f_dev_val_campo                                );
+    l_cod_uso_vehi     := TO_NUMBER(tron2000.em_k_ptd_atr.f_dev_val_campo(p_cod_campo  => 'COD_USO_VEHI'));
+    l_cod_tip_vehi     := TO_NUMBER(tron2000.em_k_ptd_atr.f_dev_val_campo(p_cod_campo  => 'COD_TIP_VEHI'));
+    l_cod_producto     := TO_NUMBER(tron2000.em_k_ptd_atr.f_dev_val_campo(p_cod_campo  => 'COD_PRODUCTO'));
+    -- Validamos que el codigo de uso principal sea distinto del codigo de uso alterno
+    IF l_cod_uso_vehi = l_cod_uso_vehi_alt
+    THEN
+       --
+       tron2000.trn_k_ptd.p_gen_error(p_cod_idioma  => tron2000.trn_k_ptd.f_dev_cod_idioma ,
+                                      p_cod_mensaje => 20090001                            ,
+                                      p_t_valores   => l_t_valores                         ,
+                                      p_pre_mensaje => tron2000.trn_k_ptd.NULO             ,
+                                      p_pos_mensaje => ':[USO ALTERNO]'                    );
+       --
+    END IF;
+    --
+    -- Buscamos que exista el uso alterno en la tabla de usos por producto y recuperamos el nivel de riesgo
+    l_reg_alt := em_k_ta999007.f_lee_vigente (p_cod_cia          => tron2000.dc_k_ptd.f_dev_cod_cia             ,
+                                              p_cod_sector       => tron2000.em_k_ptd_gni.f_dev_cod_sector      ,
+                                              p_cod_ramo         => tron2000.em_k_ptd_gni.f_dev_cod_ramo        ,
+                                              p_num_poliza_grupo => tron2000.em_k_ptd_gni.f_dev_num_poliza_grupo,
+                                              p_num_contrato     => tron2000.em_k_ptd_gni.f_dev_num_contrato    ,
+                                              p_num_subcontrato  => tron2000.em_k_ptd_gni.f_dev_num_subcontrato ,
+                                              p_cod_canal3       => tron2000.em_k_ptd_gni.f_dev_cod_canal3      ,
+                                              p_cod_producto     => l_cod_producto                              ,
+                                              p_cod_tip_vehi     => l_cod_tip_vehi                              ,
+                                              p_cod_uso_vehi     => l_cod_uso_vehi_alt                          ,
+                                              p_fec_validez      => tron2000.em_k_ptd_gni.f_dev_fec_efec_poliza );
+    --
+    -- Recuperamos el registro para el uso principal par recuperar el nivel de riesgo
+    l_reg_uso := em_k_ta999007.f_lee_vigente (p_cod_cia          => tron2000.dc_k_ptd.f_dev_cod_cia             ,
+                                              p_cod_sector       => tron2000.em_k_ptd_gni.f_dev_cod_sector      ,
+                                              p_cod_ramo         => tron2000.em_k_ptd_gni.f_dev_cod_ramo        ,
+                                              p_num_poliza_grupo => tron2000.em_k_ptd_gni.f_dev_num_poliza_grupo,
+                                              p_num_contrato     => tron2000.em_k_ptd_gni.f_dev_num_contrato    ,
+                                              p_num_subcontrato  => tron2000.em_k_ptd_gni.f_dev_num_subcontrato ,
+                                              p_cod_canal3       => tron2000.em_k_ptd_gni.f_dev_cod_canal3      ,
+                                              p_cod_producto     => l_cod_producto                              ,
+                                              p_cod_tip_vehi     => l_cod_tip_vehi                              ,
+                                              p_cod_uso_vehi     => l_cod_uso_vehi                              ,
+                                              p_fec_validez      => tron2000.em_k_ptd_gni.f_dev_fec_efec_poliza );
+    -- Validamos que el nivel de riesgo del uso principal sea <= que el del uso alterno
+    IF l_reg_alt.nivel_riesgo > l_reg_uso.nivel_riesgo
+    THEN
+       --
+       tron2000.trn_k_ptd.p_gen_error(p_cod_idioma  => tron2000.trn_k_ptd.f_dev_cod_idioma ,
+                                      p_cod_mensaje => 20090002                            ,
+                                      p_t_valores   => l_t_valores                         ,
+                                      p_pre_mensaje => tron2000.trn_k_ptd.NULO             ,
+                                      p_pos_mensaje => ':[USO ALTERNO]'                    );
+       --
+    END IF;
+    -- Validamos y asignamos la descripcion
+    tron2000.em_k_ptd_rsk_mot.p_val_uso_vehi(p_cod_cia      => tron2000.dc_k_ptd.f_dev_cod_cia            ,
+                                             p_cod_uso_vehi => l_cod_uso_vehi_alt                         ,
+                                             p_fec_validez  => tron2000.em_k_ptd_gni.f_dev_fec_efec_poliza);
+    --
+    tron2000.trn_k_ptd.p_gen_final_traza(p_nom_prg    => 'em_k_999_atr'      ,
+                                         p_nom_metodo => 'p_val_cod_uso_alt' );
+    --
+ END p_val_cod_uso_alt;
+ --
+ /* -----------------------------------------------------
+ || p_val_cod_uso_vehi
+ ||
+ || Procedimiento que verifica que uso de vehiculo
+ || ingresado sea un uso de vehiculo que exista y
+ || que este vigente en la tabla de configuracion de usos
+ || de vehiculo por producto.
+ */ -----------------------------------------------------
+ --
+ PROCEDURE p_val_cod_uso_vehi
+ IS
+    --
+    l_cod_producto        ta999007.cod_producto%TYPE;
+    --
+    l_cod_tip_vehi        ta999007.cod_tip_vehi%TYPE;
+    --
+    l_cod_uso_vehi        ta999007.cod_uso_vehi%TYPE;
+    --
+    l_reg                 ta999007%ROWTYPE;
+    --
+ BEGIN
+    --
+    tron2000.trn_k_ptd.p_gen_comienzo_traza(p_nom_prg    => 'em_k_999_atr'      ,
+                                            p_nom_metodo => 'p_val_cod_uso_vehi');
+    --
+    l_cod_producto        := TO_NUMBER(tron2000.em_k_ptd_atr.f_dev_val_campo(p_cod_campo  => 'COD_PRODUCTO'));
+    --
+    l_cod_tip_vehi        := TO_NUMBER(tron2000.em_k_ptd_atr.f_dev_val_campo(p_cod_campo  => 'COD_TIP_VEHI'));
+    --
+    l_cod_uso_vehi        := TO_NUMBER(tron2000.em_k_ptd_atr.f_dev_val_campo);
+    --
+    l_reg := em_k_ta999007.f_lee_vigente (p_cod_cia          => tron2000.dc_k_ptd.f_dev_cod_cia             ,
+                                          p_cod_sector       => tron2000.em_k_ptd_gni.f_dev_cod_sector      ,
+                                          p_cod_ramo         => tron2000.em_k_ptd_gni.f_dev_cod_ramo        ,
+                                          p_num_poliza_grupo => tron2000.em_k_ptd_gni.f_dev_num_poliza_grupo,
+                                          p_num_contrato     => tron2000.em_k_ptd_gni.f_dev_num_contrato    ,
+                                          p_num_subcontrato  => tron2000.em_k_ptd_gni.f_dev_num_subcontrato ,
+                                          p_cod_canal3       => tron2000.em_k_ptd_gni.f_dev_cod_canal3      ,
+                                          p_cod_producto     => l_cod_producto                              ,
+                                          p_cod_tip_vehi     => l_cod_tip_vehi                              ,
+                                          p_cod_uso_vehi     => l_cod_uso_vehi                              ,
+                                          p_fec_validez      => tron2000.em_k_ptd_gni.f_dev_fec_efec_poliza );
+    -- Obtenemos la descripcion
+    tron2000.em_k_ptd_rsk_mot.p_val_uso_vehi(p_cod_cia      => tron2000.dc_k_ptd.f_dev_cod_cia            ,
+                                             p_cod_uso_vehi => l_cod_uso_vehi                             ,
+                                             p_fec_validez  => tron2000.em_k_ptd_gni.f_dev_fec_efec_poliza);
+    --
+    tron2000.trn_k_ptd.p_gen_final_traza(p_nom_prg    => 'em_k_999_atr'       ,
+                                         p_nom_metodo => 'p_val_cod_uso_vehi' );
+    --
+ END p_val_cod_uso_vehi;
+ --
+ /* -------------------------------------------------------
+ || p_val_anio_sub_modelo:
+ || Valida que exista el anio sub modelo, y que si es a
+ || valor factura solo permita ingresar el anio actual o anio
+ || actual mas uno
+ */ -------------------------------------------------------
+ --
+ PROCEDURE p_val_anio_sub_modelo
+ IS
+    --
+    l_val_sub_modelo  tron2000.em_k_ptd_rsk_mot.t_val_sub_modelo ;
+    l_anio_sub_modelo tron2000.em_k_ptd_rsk_mot.t_anio_sub_modelo;
+    l_tip_indem       TA999501.cod_tip_indem                %TYPE;
+    l_t_valores       tron2000.trn_k_ptd.t_t_valores             ;
+    --
+ BEGIN
+    --
+    -- Comienza la traza
+    tron2000.trn_k_ptd.p_gen_comienzo_traza(p_nom_prg    => 'em_k_999_atr'         ,
+                                            p_nom_metodo => 'p_val_anio_sub_modelo');
+    --
+    tron2000.em_k_ptd_rsk_mot.p_val_anio_sub_modelo(p_fec_validez => tron2000.em_k_ptd_gni.f_dev_fec_efec_poliza);
+    --
+    l_tip_indem       := tron2000.em_k_ptd_atr.f_dev_val_campo(p_cod_campo => 'TIP_INDEM');
+    l_anio_sub_modelo := TRON2000.em_k_ptd_atr.f_dev_val_campo;
+    --
+    -- Valida que el modelo del anio sea del anio actual o del siguiente para que pueda ser indemnizado a valor factura
+    IF l_tip_indem = g_k_val_factura AND (l_anio_sub_modelo NOT IN (g_k_anio_actual,g_k_anio_actual + 1)) THEN
+       --
+       tron2000.trn_k_ptd.p_gen_error(p_cod_idioma  => tron2000.trn_k_ptd.f_dev_cod_idioma                        ,
+                                      p_cod_mensaje => 20005                                                      ,
+                                      p_t_valores   => l_t_valores                                                ,
+                                      p_pre_mensaje => tron2000.trn_k_ptd.nulo                                    ,
+                                      p_pos_mensaje =>
+                                      'VALOR DE FACTURA: NO DISPONIBLE PARA EL ANIO DEL VEHICULO[ANIO SUBMODELO]' );
+       --
+    END IF;
+    --
+    --Termina traza
+    tron2000.trn_k_ptd.p_gen_final_traza(p_nom_prg    => 'em_k_999_atr'         ,
+                                         p_nom_metodo => 'p_val_anio_sub_modelo');
+    --
+ END p_val_anio_sub_modelo;
+ --
+ /* -------------------------------------------------------
+ || p_pre_val_factura:
+ || Sugiere el valor del sub modelo en el valor factura
+ */ -------------------------------------------------------
+ --
+ PROCEDURE p_pre_val_factura
+ IS
+    --
+    l_val_sub_modelo  tron2000.em_k_ptd_rsk_mot.t_val_sub_modelo;
+    l_tip_indem       TA999501.cod_tip_indem               %TYPE;
+    --
+ BEGIN
+    --
+    -- Comienza la traza
+    tron2000.trn_k_ptd.p_gen_comienzo_traza(p_nom_prg    => 'em_k_999_atr'     ,
+                                            p_nom_metodo => 'p_pre_val_factura');
+    --
+    l_tip_indem := tron2000.em_k_ptd_atr.f_dev_val_campo(p_cod_campo => 'TIP_INDEM');
+    --
+    IF l_tip_indem = g_k_val_factura AND tron2000.em_k_ptd_atr.f_dev_val_campo IS NULL
+    THEN
+       --
+       -- Recupera el valor del submodelo y se lo asigna a valor factura
+       l_val_sub_modelo := tron2000.em_k_ptd_rsk_mot.f_dev_val_sub_modelo(p_fec_cambio  => tron2000.em_k_ptd_gni.f_dev_fec_efec_spto  ,
+                                                                          p_fec_validez => tron2000.em_k_ptd_gni.f_dev_fec_efec_poliza);
+       --
+       tron2000.em_k_ptd_atr.p_asg_val_campo(p_val_campo => l_val_sub_modelo);
+       --
+    ELSIF l_tip_indem <> g_k_val_factura
+     THEN
+       --
+       -- Limpia los campos
+       tron2000.em_k_ptd_atr.p_asg_val_campo(p_val_campo => tron2000.trn_k_ptd.NULO );
+       tron2000.em_k_ptd_gni.p_asg_mca_salto(p_mca_salto => tron2000.trn_k_ptd.SI   );
+       --
+    END IF;
+    --
+    --Termina traza
+    tron2000.trn_k_ptd.p_gen_final_traza(p_nom_prg    => 'em_k_999_atr'     ,
+                                         p_nom_metodo => 'p_pre_val_factura');
+    --
+ END p_pre_val_factura;
+ --
+ /* -------------------------------------------------------
+ || p_val_val_factura:
+ || Asigna al valor de factura, el valor del submodelo
+ */ -------------------------------------------------------
+ --
+ PROCEDURE p_val_val_factura
+ IS
+    --
+    l_t_valores  tron2000.trn_k_ptd.t_t_valores;
+    --
+ BEGIN
+    --
+    -- Comienza la traza
+    tron2000.trn_k_ptd.p_gen_comienzo_traza(p_nom_prg    => 'em_k_999_atr'     ,
+                                            p_nom_metodo => 'p_val_val_factura');
+    --
+    -- Valida si cod_sub_modelo no viene vacia
+    IF   tron2000.em_k_ptd_atr.f_dev_val_campo(p_cod_campo => 'TIP_INDEM') = g_k_val_factura
+    THEN
+       --
+       IF tron2000.em_k_ptd_atr.f_dev_val_campo IS NOT NULL
+       THEN
+          --
+          tron2000.em_k_ptd_rsk_mot.p_val_val_sub_modelo(p_fec_cambio  => tron2000.em_k_ptd_gni.f_dev_fec_efec_spto  ,
+                                                         p_fec_validez => tron2000.em_k_ptd_gni.f_dev_fec_efec_poliza);
+          --
+       ELSE
+          -- 20003 Campo obligatorio
+          tron2000.trn_k_ptd.p_gen_error(p_cod_idioma  => tron2000.trn_k_ptd.f_dev_cod_idioma,
+                                         p_cod_mensaje => 20003                              ,
+                                         p_t_valores   => l_t_valores                        ,
+                                         p_pre_mensaje => tron2000.trn_k_ptd.nulo            ,
+                                         p_pos_mensaje => ':[VALOR DE FACTURA]'              );
+          --
+       END IF;
+       --
+    END IF;
+    --
+    --Termina traza
+    tron2000.trn_k_ptd.p_gen_final_traza(p_nom_prg    => 'em_k_999_atr'  ,
+                                      p_nom_metodo => 'p_val_val_factura');
+    --
+ END p_val_val_factura;
+ --
+ /* -----------------------------------------------------
+ || p_pre_tip_per_ch_riesgo
+ || Procedimiento donde se define el tipo de persona
+ || del conductor habitual de mayor riesgo.  En la
+ || variable ptd_val_04 se recupera una marca que indique
+ || si en un suplemento ha cambiado el valor de DV de
+ || tip_docum o cod_docum_de conductor de mayor riesgo.
+ */ -----------------------------------------------------
+ --
+ PROCEDURE p_pre_tip_per_ch_riesgo
+ IS
+    --
+    l_tip_spto         tron2000.em_k_ptd_gni.t_tip_spto;
+    --
+ BEGIN
+    -- Inicia Traza
+    tron2000.trn_k_ptd.p_gen_comienzo_traza(p_nom_prg    => 'em_k_999_atr'            ,
+                                            p_nom_metodo => 'p_pre_tip_per_ch_riesgo' );
+    --
+    l_tip_spto := tron2000.em_k_ptd_gni.f_dev_tip_spto;
+    -- Evaluamos los casos en los que se debe calcular el valor de TIP_PER_CH_RIESGO
+    -- si es emision o si es renovacion o si cambia el conductor habitual ptd_val_04.
+    IF    l_tip_spto IN (tron2000.em_k_ptd_gni.NUEVA_EMISION, tron2000.em_k_ptd_gni.RENOVACION)
+       OR tron2000.trn_k_ptd.f_dev_ptd_val_04 = tron2000.trn_k_ptd.SI
+    THEN
+       --  Persona Fisica
+       IF NVL(tron2000.dc_k_ptd_thp.f_dev_ptd_mca_fisico, g_k_chr_nulo) = tron2000.trn_k_ptd.SI
+       THEN
+          tron2000.em_k_ptd_atr.p_asg_val_campo (p_val_campo => g_k_cod_persona_fisica);
+       --
+       ELSE
+          -- Sin conductor/persona moral
+          tron2000.em_k_ptd_atr.p_asg_val_campo (p_val_campo => g_k_cod_persona_indefinido);
+          --
+       END IF;
+       --
+    END IF;
+    -- Se inhabilita el campo tipo de persona ch riesgo.
+    tron2000.em_k_ptd_gni.p_asg_mca_salto(p_mca_salto => tron2000.trn_k_ptd.SI);
+    -- Termina la traza
+    tron2000.trn_k_ptd.p_gen_final_traza(p_nom_prg    => 'em_k_999_atr'           ,
+                                         p_nom_metodo => 'p_pre_tip_per_ch_riesgo');
+    --
+ END p_pre_tip_per_ch_riesgo;
+ --
+ /* -----------------------------------------------------
+ || p_pre_sexo_ch_riesgo:
+ || Asigna valor al dato variable sexo_ch_riesgo. En la
+ || variable ptd_val_04 se recupera una marca que indique
+ || si en un suplemento ha cambiado el valor de DV de
+ || tip_docum o cod_docum_de conductor de mayor riesgo.
+ */ -----------------------------------------------------
+ --
+ PROCEDURE p_pre_sexo_ch_riesgo
+ IS
+    --
+    l_mca_sexo         tron2000.dc_k_ptd_thp.t_mca_sexo;
+    l_tip_spto         tron2000.em_k_ptd_gni.t_tip_spto;
+    --
+ BEGIN
+    -- Inicia Traza
+    tron2000.trn_k_ptd.p_gen_comienzo_traza(p_nom_prg    => 'em_k_999_atr'         ,
+                                            p_nom_metodo => 'p_pre_sexo_ch_riesgo' );
+    --
+    l_tip_spto := tron2000.em_k_ptd_gni.f_dev_tip_spto;
+    -- Evaluamos los casos en los que se debe calcular el valor de SEXO_CH_RIESGO
+    -- si es emision o si es renovacion o si cambia el conductor habitual ptd_val_04.
+    IF    l_tip_spto IN (tron2000.em_k_ptd_gni.NUEVA_EMISION, tron2000.em_k_ptd_gni.RENOVACION)
+       OR tron2000.trn_k_ptd.f_dev_ptd_val_04 = tron2000.trn_k_ptd.SI
+    THEN
+       --
+       l_mca_sexo := NVL(tron2000.dc_k_ptd_thp.f_dev_ptd_mca_sexo, g_k_chr_nulo);
+       --
+       IF NVL(tron2000.dc_k_ptd_thp.f_dev_ptd_mca_fisico, g_k_chr_nulo) = tron2000.trn_k_ptd.SI
+       THEN
+          --
+          IF l_mca_sexo = tron2000.dc_k_ptd.SEXO_MASCULINO
+          THEN
+             --
+             tron2000.em_k_ptd_atr.p_asg_val_campo (p_val_campo => g_k_cod_sexo_masculino);
+             --
+          ELSE
+             --
+             tron2000.em_k_ptd_atr.p_asg_val_campo (p_val_campo => g_k_cod_sexo_femenino);
+             --
+          END IF;
+       --
+       ELSE
+          -- Persona moral/sin conductor
+          tron2000.em_k_ptd_atr.p_asg_val_campo (p_val_campo => g_k_cod_sexo_indeterminado);
+          --
+       END IF;
+       --
+    END IF;
+    -- Se inhabilita el campo de sexo ch riesgo
+    tron2000.em_k_ptd_gni.p_asg_mca_salto(p_mca_salto => tron2000.trn_k_ptd.SI);
+    -- Termina la traza
+    tron2000.trn_k_ptd.p_gen_final_traza(p_nom_prg    => 'em_k_999_atr'        ,
+                                         p_nom_metodo => 'p_pre_sexo_ch_riesgo');
+    --
+ END p_pre_sexo_ch_riesgo;
+ --
+ /* -----------------------------------------------------------
+ || p_pre_num_puertas_vehi
+ || Obtener del numero de puertas del vehiculo.
+ */ -----------------------------------------------------------
+ --
+ PROCEDURE p_pre_num_puertas_vehi
+ IS
+    --
+    l_num_puertas        tron2000.em_k_ptd_rsk_mot.t_num_puertas;
+    --
+ BEGIN
+    -- Inicia Traza
+    tron2000.trn_k_ptd.p_gen_comienzo_traza(p_nom_prg    => 'em_k_999_atr'          ,
+                                            p_nom_metodo => 'p_pre_num_puertas_vehi');
+    --
+    l_num_puertas := tron2000.em_k_ptd_rsk_mot.f_dev_ptd_num_puertas;
+    -- Asignamos el valor calculado.
+    tron2000.em_k_ptd_atr.p_asg_val_campo (p_val_campo => l_num_puertas);
+    --
+    -- Se inhabilita el campo de numero puertas vehiculo
+    tron2000.em_k_ptd_gni.p_asg_mca_salto(p_mca_salto => tron2000.trn_k_ptd.SI);
+    -- Termina la traza
+    tron2000.trn_k_ptd.p_gen_final_traza(p_nom_prg    => 'em_k_999_atr'          ,
+                                         p_nom_metodo => 'p_pre_num_puertas_vehi');
+    --
+ END p_pre_num_puertas_vehi;
+ --
+ /* -----------------------------------------------------
+ || p_pre_tip_docum_ch_riesgo :
+ || asigna valor al dato variable tip_docum_ch_riesgo
+ */ -----------------------------------------------------
+ --
+ PROCEDURE p_pre_tip_docum_ch_riesgo
+ IS
+    --
+    l_record_tercero        tron2000.dc_k_ptd_thp.record_tercero      ;
+    l_datos_fijos_tercero   tron2000.dc_k_ptd_thp.datos_fijos_tercero ;
+    --
+    l_tb_conductores        tron2000.em_k_ptd_ine.t_tb_docum_benef    ;
+    --
+    l_fila                  BINARY_INTEGER                            ;
+    l_hay_cambio            BOOLEAN                                   ;
+    l_hay_conductor         BOOLEAN                                   ;
+    --
+    l_fec_nacimiento_menor  tron2000.dc_k_ptd_thp.t_fec_nacimiento    ;
+    l_tip_docum_ch_riesgo   tron2000.em_k_ptd_ine.t_tip_docum         ;
+    l_cod_docum_ch_riesgo   tron2000.em_k_ptd_ine.t_cod_docum         ;
+    --
+    l_tip_spto              tron2000.em_k_ptd_gni.t_tip_spto          ;
+    l_cod_cia               tron2000.dc_k_ptd.t_cod_cia               ;
+    --
+ BEGIN
+    --
+    tron2000.trn_k_ptd.p_gen_comienzo_traza(p_nom_prg    => 'em_k_999_atr'             ,
+                                            p_nom_metodo => 'p_pre_tip_docum_ch_riesgo');
+    --
+    l_hay_cambio    := FALSE;
+    l_hay_conductor := FALSE;
+    --
+    tron2000.trn_k_ptd.p_asg_ptd_val_04(p_ptd_val_04 => tron2000.trn_k_ptd.NO);
+    --
+    l_tip_docum_ch_riesgo:= tron2000.trn_k_ptd.NULO;
+    l_cod_docum_ch_riesgo:= tron2000.trn_k_ptd.NULO;
+    --
+    l_tip_spto := tron2000.em_k_ptd_gni.f_dev_tip_spto;
+    l_cod_cia  := tron2000.dc_k_ptd.f_dev_cod_cia     ;
+    --
+    -- buscamos los conductores de la poliza y riesgo actual
+    l_tb_conductores := tron2000.em_k_ptd_ine.f_con_beneficiarios_riesgo(p_cod_cia    => l_cod_cia                                ,
+                                                                         p_num_poliza => tron2000.em_k_ptd_gni.f_dev_num_poliza   ,
+                                                                         p_num_riesgo => tron2000.em_k_ptd_rsk.f_dev_num_riesgo   ,
+                                                                         p_tip_benef  => tron2000.em_k_ptd_ine.TIP_BENEF_CONDUCTOR);
+    --
+    IF l_tb_conductores.EXISTS(l_tb_conductores.FIRST)
+    THEN
+       --
+       l_fila := l_tb_conductores.FIRST;
+       --
+       -- recorremos la lista de conductores para elegir el de mayor riesgo
+       WHILE l_fila IS NOT NULL
+       LOOP
+          --
+          -- obtenemos los datos del tercero del conductor
+          l_record_tercero := tron2000.dc_k_ptd_thp.f_con_datos_asegurado(p_cod_cia          => l_cod_cia                             ,
+                                                                          p_tip_docum        => l_tb_conductores(l_fila).tip_docum    ,
+                                                                          p_cod_docum        => l_tb_conductores(l_fila).cod_docum    ,
+                                                                          p_num_poliza       => tron2000.em_k_ptd_gni.f_dev_num_poliza,
+                                                                          p_num_spto         => tron2000.em_k_ptd_gni.f_dev_num_spto  ,
+                                                                          p_num_riesgo       => tron2000.em_k_ptd_rsk.f_dev_num_riesgo,
+                                                                          p_num_secu_cta_tar => tron2000.trn_k_ptd.NULO               );
+          --
+          l_datos_fijos_tercero := tron2000.dc_k_ptd_thp.f_con_datos_fijos_tercero(p_cod_cia    => l_cod_cia                         ,
+                                                                                   p_tip_docum  => l_tb_conductores(l_fila).tip_docum,
+                                                                                   p_cod_docum  => l_tb_conductores(l_fila).cod_docum);
+          --
+          -- revisamos que sea una persona fisica
+          IF l_datos_fijos_tercero.mca_fisico = tron2000.trn_k_ptd.SI
+          THEN
+             --
+             -- seleccionamos un primer conductor
+             IF NOT l_hay_conductor
+             THEN
+                --
+                l_hay_conductor := TRUE;
+                --
+                l_fec_nacimiento_menor := l_record_tercero.fec_nacimiento;
+                l_tip_docum_ch_riesgo  := l_record_tercero.tip_docum     ;
+                l_cod_docum_ch_riesgo  := l_record_tercero.cod_docum     ;
+                --
+             -- si el conductor es de menor edad que el seleccionado actual lo seleccionamos
+             ELSIF l_record_tercero.fec_nacimiento < l_fec_nacimiento_menor
+             THEN
+                --
+                l_fec_nacimiento_menor := l_record_tercero.fec_nacimiento;
+                l_tip_docum_ch_riesgo  := l_record_tercero.tip_docum     ;
+                l_cod_docum_ch_riesgo  := l_record_tercero.cod_docum     ;
+                --
+             -- si el conductor es de la misma edad que el seleccionado actual y ademas es de sexo masculiono lo seleccionamos
+             ELSIF  l_record_tercero.fec_nacimiento = l_fec_nacimiento_menor
+                AND l_record_tercero.mca_sexo       = tron2000.dc_k_ptd.SEXO_MASCULINO
+             THEN
+                --
+                l_fec_nacimiento_menor := l_record_tercero.fec_nacimiento;
+                l_tip_docum_ch_riesgo  := l_record_tercero.tip_docum     ;
+                l_cod_docum_ch_riesgo  := l_record_tercero.cod_docum     ;
+                --
+             END IF;
+             --
+          END IF;
+          --
+          l_fila := l_tb_conductores.NEXT(l_fila);
+          --
+       END LOOP;
+       --
+    END IF;
+    --
+    -- comparamos para ver si el tip_docum ha cambiado en este suplemento
+    IF NVL(tron2000.em_k_ptd_atr.f_dev_val_campo_ant, g_k_txt_nulo) <> NVL(l_tip_docum_ch_riesgo, g_k_txt_nulo)
+    THEN
+       --
+       l_hay_cambio := TRUE;
+       -- indicamos en la variable contenedor ptd_val_04 que tip_docum ha cambiado en este suplemento
+       tron2000.trn_k_ptd.p_asg_ptd_val_04(p_ptd_val_04 => tron2000.trn_k_ptd.SI);
+       --
+    END IF;
+    --
+    IF    l_tip_spto IN (tron2000.em_k_ptd_gni.NUEVA_EMISION, tron2000.em_k_ptd_gni.RENOVACION)
+       OR l_hay_cambio
+    THEN
+       --
+       IF l_hay_conductor
+       THEN
+          --
+          -- con estas llamamdas a f_con_car_asegurado fijamos los valores del Conductor habitual en las globales.
+          l_record_tercero := tron2000.dc_k_ptd_thp.f_con_datos_asegurado(p_cod_cia          => l_cod_cia                             ,
+                                                                          p_tip_docum        => l_tip_docum_ch_riesgo                 ,
+                                                                          p_cod_docum        => l_cod_docum_ch_riesgo                 ,
+                                                                          p_num_poliza       => tron2000.em_k_ptd_gni.f_dev_num_poliza,
+                                                                          p_num_spto         => tron2000.em_k_ptd_gni.f_dev_num_spto  ,
+                                                                          p_num_riesgo       => tron2000.em_k_ptd_rsk.f_dev_num_riesgo,
+                                                                          p_num_secu_cta_tar => tron2000.trn_k_ptd.NULO               );
+          --
+          l_datos_fijos_tercero := tron2000.dc_k_ptd_thp.f_con_datos_fijos_tercero(p_cod_cia    => l_cod_cia            ,
+                                                                                   p_tip_docum  => l_tip_docum_ch_riesgo,
+                                                                                   p_cod_docum  => l_cod_docum_ch_riesgo);
+          --
+          -- asignamos el valor a tip_docum del conductor seleccionado.
+          tron2000.em_k_ptd_atr.p_asg_val_campo(p_val_campo => l_tip_docum_ch_riesgo);
+          --
+       ELSE
+          --
+          tron2000.em_k_ptd_atr.p_asg_val_campo(p_val_campo => tron2000.trn_k_ptd.NULO);
+          --
+       END IF;
+       --
+    END IF;
+    --
+    tron2000.em_k_ptd_atr.p_asg_mca_salto(p_mca_salto => tron2000.trn_k_ptd.SI);
+    --
+    tron2000.trn_k_ptd.p_gen_final_traza(p_nom_prg    => 'em_k_999_atr'             ,
+                                         p_nom_metodo => 'p_pre_tip_docum_ch_riesgo');
+    --
+ END p_pre_tip_docum_ch_riesgo;
+ --
+ /* -----------------------------------------------------
+ || p_pre_cod_docum_ch_riesgo :
+ || asigna valor al dato variable cod_docum_ch_riesgo
+ */ -----------------------------------------------------
+ --
+ PROCEDURE p_pre_cod_docum_ch_riesgo
+ IS
+    --
+    l_hay_cambio            VARCHAR2(1)                      ;
+    l_cod_docum_ch_riesgo   tron2000.em_k_ptd_ine.t_cod_docum;
+    --
+    l_tip_spto              tron2000.em_k_ptd_gni.t_tip_spto ;
+    --
+ BEGIN
+    --
+    tron2000.trn_k_ptd.p_gen_comienzo_traza(p_nom_prg    => 'em_k_999_atr'             ,
+                                            p_nom_metodo => 'p_pre_cod_docum_ch_riesgo');
+    --
+    IF NVL(tron2000.dc_k_ptd_thp.f_dev_ptd_mca_fisico, g_k_chr_nulo) = tron2000.trn_k_ptd.SI
+    THEN
+       --
+       l_hay_cambio          := tron2000.trn_k_ptd.f_dev_ptd_val_04;
+       --
+       l_cod_docum_ch_riesgo := NVL(tron2000.dc_k_ptd_thp.f_dev_ptd_cod_docum, g_k_txt_nulo);
+       --
+       l_tip_spto            := tron2000.em_k_ptd_gni.f_dev_tip_spto;
+       --
+       -- comparamos para ver si el cod_docum ha cambiado en este suplemento
+       IF NVL(tron2000.em_k_ptd_atr.f_dev_val_campo_ant, g_k_txt_nulo) <> l_cod_docum_ch_riesgo
+       THEN
+          --
+          l_hay_cambio := tron2000.trn_k_ptd.SI;
+          --indicamos en la variable contenedor ptd_val_04 que cod_docum ha cambiado en este suplemento
+          tron2000.trn_k_ptd.p_asg_ptd_val_04(p_ptd_val_04 => tron2000.trn_k_ptd.SI);
+          --
+       END IF;
+       --
+       IF    l_tip_spto   IN (tron2000.em_k_ptd_gni.NUEVA_EMISION, tron2000.em_k_ptd_gni.RENOVACION)
+          OR l_hay_cambio  = tron2000.trn_k_ptd.SI
+       THEN
+          --
+          tron2000.em_k_ptd_atr.p_asg_val_campo(p_val_campo => l_cod_docum_ch_riesgo);
+          --
+       END IF;
+       --
+    ELSE
+       --
+       tron2000.em_k_ptd_atr.p_asg_val_campo(p_val_campo => tron2000.trn_k_ptd.NULO);
+       --
+    END IF;
+    --
+    tron2000.em_k_ptd_atr.p_asg_mca_salto(p_mca_salto => tron2000.trn_k_ptd.SI);
+    --
+    tron2000.trn_k_ptd.p_gen_final_traza(p_nom_prg    => 'em_k_999_atr'             ,
+                                         p_nom_metodo => 'p_pre_cod_docum_ch_riesgo');
+    --
+ END p_pre_cod_docum_ch_riesgo;
+ --
+ /* --------------------------------------------------------------------------
+ || p_pre_cod_pob_ch_riesgo:
+ || Procedimiento que obtiene el codigo de poblacion del conductor de
+ || mayor riesgo (COD_POB_CH_RIESGO).
+ */ --------------------------------------------------------------------------
+ --
+ PROCEDURE p_pre_cod_pob_ch_riesgo
+ IS
+    --
+    l_reg_cod_postal        tron2000.dc_k_ptd.record_codigo_postal     ;
+    l_cp_ch_riesgo          tron2000.dc_k_ptd.COD_CODPOSTAL_GEN%TYPE   ;
+    l_dv_cp_ch_riesgo       tron2000.dc_k_ptd.COD_CODPOSTAL_GEN%TYPE   ;
+    --
+ BEGIN
+    -- Comienza traza
+    tron2000.trn_k_ptd.p_gen_comienzo_traza(p_nom_prg    => 'em_k_999_atr'            ,
+                                            p_nom_metodo => 'p_pre_cod_pob_ch_riesgo ');
+    --
+    --Se asigna un salto logico para inhabilitar el campo del dato variable (COD_POB_CH_RIESGO)
+    tron2000.em_k_ptd_gni.p_asg_mca_salto(p_mca_salto => tron2000.trn_k_ptd.SI);
+    --Se obtiene el codigo postal global del conductor de mayor riesgo
+    l_cp_ch_riesgo:=tron2000.dc_k_ptd_thp.f_dev_ptd_cod_postal;
+    --
+    IF   tron2000.em_k_ptd_gni.f_dev_tip_spto = tron2000.em_k_ptd_gni.NUEVA_EMISION
+       OR tron2000.em_k_ptd_gni.f_dev_tip_spto = tron2000.em_k_ptd_gni.RENOVACION
+       OR tron2000.trn_k_ptd.f_dev_ptd_val_04  = tron2000.trn_k_ptd.SI
+    THEN
+       -- Valida si el Codigo Postal Global tiene informacion.
+       IF l_cp_ch_riesgo IS NOT NULL
+       THEN
+          --
+          --Se obtiene la poblacion correspondiente al cp
+          l_reg_cod_postal:= tron2000.dc_k_ptd.f_con_cod_postal(p_cod_pais    => g_k_cod_pais  ,
+                                                                p_cod_postal  => l_cp_ch_riesgo);
+          --
+          --Se asigna el valor de la poblacion al dato variable (COD_POB_CH_RIESGO)
+          tron2000.em_k_ptd_atr.p_asg_val_campo(p_val_campo => l_reg_cod_postal.cod_prov);
+          --
+       ELSE
+          --
+          --Se obtiene el valor del cp dato variable(CP_CH_RIESGO)
+          l_dv_cp_ch_riesgo:=tron2000.em_k_ptd_atr.f_dev_val_campo(p_cod_campo => 'CP_CH_RIESGO');
+          --Valida si el cp dato variable (CP_CH_RIESGO) tiene informacion
+          IF l_dv_cp_ch_riesgo IS NOT NULL
+          THEN
+             --Se obtiene la poblacion correspondiente al cp
+             l_reg_cod_postal:= tron2000.dc_k_ptd.f_con_cod_postal(p_cod_pais    => g_k_cod_pais     ,
+                                                                   p_cod_postal  => l_dv_cp_ch_riesgo);
+             --Se asigna el valor de la poblacion al dato variable (COD_POB_CH_RIESGO)
+             tron2000.em_k_ptd_atr.p_asg_val_campo(p_val_campo => l_reg_cod_postal.cod_prov);
+          ELSE
+             --Se asigna el valor nulo al dato variable (COD_POB_CH_RIESGO)
+             tron2000.em_k_ptd_atr.p_asg_val_campo(p_val_campo => tron2000.trn_k_ptd.NULO);
+             --
+          END IF;
+          --
+       END IF;
+       --
+    END IF;
+    -- Termina la traza
+    tron2000.trn_k_ptd.p_gen_final_traza(p_nom_prg    => 'em_k_999_atr'           ,
+                                         p_nom_metodo => 'p_pre_cod_pob_ch_riesgo');
+    --
+ END p_pre_cod_pob_ch_riesgo;
+ --
+ /* --------------------------------------------------------------------------
+ || p_val_cod_producto:
+ || Procedimiento que valida el dato variable cod_producto.
+ */ --------------------------------------------------------------------------
+ --
+ PROCEDURE p_val_cod_producto
+ IS
+    --
+    l_t_valores  tron2000.trn_k_ptd.t_t_valores     ;
+    --
+    l_not_exist  EXCEPTION                          ;
+    PRAGMA       EXCEPTION_INIT(l_not_exist, -20001);
+    l_invalid    EXCEPTION                          ;
+    PRAGMA       EXCEPTION_INIT(l_invalid,   -20020);
+    --
+ BEGIN
+    --
+    tron2000.trn_k_ptd.p_gen_comienzo_traza(p_nom_prg    => 'em_k_999_atr'      ,
+                                            p_nom_metodo => 'p_val_cod_producto');
+    -- Validamos y asignamos la descripcion
+    tron2000.em_k_ptd_atr.p_val_cto_variable;
+    --
+    tron2000.trn_k_ptd.p_gen_final_traza(p_nom_prg    => 'em_k_999_atr'       ,
+                                         p_nom_metodo => 'p_val_cod_producto' );
+    --
+ EXCEPTION
+    WHEN l_not_exist
+    THEN
+       --
+       tron2000.trn_k_ptd.p_gen_error(p_cod_idioma  => tron2000.trn_k_ptd.f_dev_cod_idioma ,
+                                      p_cod_mensaje => 20001                               ,
+                                      p_t_valores   => l_t_valores                         ,
+                                      p_pre_mensaje => tron2000.trn_k_ptd.NULO             ,
+                                      p_pos_mensaje => ':[PRODUCTO]'                       );
+       --
+    WHEN l_invalid
+    THEN
+       --
+       tron2000.trn_k_ptd.p_gen_error(p_cod_idioma  => tron2000.trn_k_ptd.f_dev_cod_idioma ,
+                                      p_cod_mensaje => 20020                               ,
+                                      p_t_valores   => l_t_valores                         ,
+                                      p_pre_mensaje => tron2000.trn_k_ptd.NULO             ,
+                                      p_pos_mensaje => ':[PRODUCTO]'                       );
+       --
+ END p_val_cod_producto;
+ --
+ /* --------------------------------------------------------------------------
+ || p_val_cod_modalidad:
+ || Procedimiento que valida el dato variable codigo de modalidad (cod_modalidad).
+ */ --------------------------------------------------------------------------
+ --
+ PROCEDURE p_val_cod_modalidad
+ IS
+    --
+ BEGIN
+    --
+    tron2000.trn_k_ptd.p_gen_comienzo_traza(p_nom_prg    => 'em_k_999_atr'       ,
+                                            p_nom_metodo => 'p_val_cod_modalidad');
+    --
+    -- Se realiza la validacion de la modalidad
+    tron2000.em_k_ptd_rsk_mot.p_val_modalidad(p_fec_validez => tron2000.em_k_ptd_gni.f_dev_fec_efec_poliza);
+    --
+    tron2000.trn_k_ptd.p_gen_final_traza(p_nom_prg    => 'em_k_999_atr'       ,
+                                         p_nom_metodo => 'p_val_cod_modalidad');
+    --
+ END p_val_cod_modalidad;
+ --
+END em_k_999_atr;
+/

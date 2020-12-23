@@ -1,0 +1,1313 @@
+CREATE OR REPLACE PACKAGE BODY tron2000.em_k_ptd_rsk_mot IS
+ --
+ /* ----------------------------- DESCRIPCION -------------------------------
+ || Datos variables riesgo -  Motor
+ */ -------------------------------------------------------------------------
+ --
+ /* ----------------------------- VERSION = 1.10 ---------------------------- */
+ --
+ /* ---------------------------- MODIFICACIONES -----------------------------
+ || 2020/12/01 - azrondax - v 1.08
+ || Se personalizaron las excepciones 
+ || --
+ || se cambio la recuperacion del nombre de las variablesglobales 
+ || --
+ || 2020/12/04 - hsolive - v 1.09
+ || Creacion de metodo previo y validacion del valor del sub modelo del vehiculo
+ || p_pre_val_sub_modelo y p_val_val_sub_modelo
+ || Internamente llama a otro metodo que se ha creado para inicializar los
+ || valores de las globales para trabajar con el valor del sub modelo.
+ || pp_ini_val_sub_modelo
+ || Internamente llama a otro metodo que hace la lectura de la tabla de
+ || valores del vehiculo
+ || --
+ || 2020/12/10 - hsolive - v 1.10
+ || Creacion del tipo valor vehiculo (record_valor_vehiculo)
+ || Creacion del metodo que devuelve la informacion del valor del vehiculo a partir
+ || de la informacion de la primary key (f_con_val_sub_modelo)
+ */ -------------------------------------------------------------------------
+ --
+ /* -------------------------------------------------------------------------
+ || Aqui comienza la declaracion de constantes GLOBALES
+ */ -------------------------------------------------------------------------
+ --
+ g_inh              EXCEPTION;
+ g_cod_cia         a2100430.cod_cia        %TYPE;
+ g_cod_marca       a2100430.cod_marca      %TYPE;
+ g_cod_modelo      a2100430.cod_modelo     %TYPE;
+ g_cod_sub_modelo  a2100430.cod_sub_modelo %TYPE;
+ g_anio_sub_modelo a2100430.anio_sub_modelo%TYPE;
+ g_val_sub_modelo  a2100430.val_sub_modelo %TYPE;
+ -- Indemnizacion a valor Factura
+ g_k_val_factura    CONSTANT NUMBER   := 5 ;
+ --
+ --
+ --
+ /* -----------------------------------------------------
+ || fp_devuelve_c:
+ ||
+ || Llama a trn_k_global.devuelve y retorna como VARCHAR2
+ */ -----------------------------------------------------
+ --
+ FUNCTION fp_devuelve_c(p_nom_global VARCHAR2)
+          RETURN VARCHAR2 IS
+ BEGIN
+    --
+    RETURN trn_k_global.devuelve(p_nom_global);
+    --
+ END fp_devuelve_c;
+ --
+ --
+ /* -----------------------------------------------------
+ || fp_devuelve_n:
+ ||
+ || Llama a trn_k_global.devuelve y retorna como NUMBER
+ */ -----------------------------------------------------
+ --
+ FUNCTION fp_devuelve_n(p_nom_global VARCHAR2)
+          RETURN NUMBER IS
+ BEGIN
+    --
+    RETURN TO_NUMBER(trn_k_global.devuelve(p_nom_global));
+    --
+ END fp_devuelve_n;
+ --
+ --
+ /* -----------------------------------------------------
+ || f_dev_ptd_val_potencia:
+ ||
+ || Devuelve el valor de la potencia del vehiculo
+ */ -----------------------------------------------------
+ --
+ FUNCTION f_dev_ptd_val_potencia 
+          RETURN a2100420.val_potencia%TYPE IS
+ BEGIN
+    --
+    RETURN fp_devuelve_n('ptd_val_potencia');
+    --
+ END f_dev_ptd_val_potencia;
+ --
+ --
+ /* -----------------------------------------------------
+ || f_dev_ptd_num_puertas:
+ ||
+ || Devuelve el valor del numero de puertas del vehiculo
+ */ -----------------------------------------------------
+ --
+ FUNCTION f_dev_ptd_num_puertas
+          RETURN a2100420.num_puertas%TYPE IS
+ BEGIN
+    --
+    RETURN fp_devuelve_n('ptd_num_puertas');
+    --
+ END f_dev_ptd_num_puertas;
+ --
+ --
+ /* -----------------------------------------------------
+ || pp_ini_globales_ptd_mot:
+ ||
+ || Metodo que inicializa las globales ptd informacion relacionada
+ || con el vehiculo
+ */ -----------------------------------------------------
+ --
+ PROCEDURE pp_ini_globales_ptd_mot
+ IS
+ BEGIN
+    --
+    trn_k_global.asigna('ptd_val_potencia'       ,trn.NULO); 
+    trn_k_global.asigna('ptd_num_puertas'        ,trn.NULO); 
+    trn_k_global.asigna('ptd_cod_carroceria_vehi',trn.NULO); 
+    trn_k_global.asigna('ptd_cod_categoria_vehi' ,trn.NULO); 
+    --
+ END pp_ini_globales_ptd_mot;
+ --
+ --
+ /* -----------------------------------------------------
+ || pp_asigna_globales_ptd_mot:
+ ||
+ || Metodo que asigna a globales ptd informacion relacionada
+ || con el vehiculo
+ */ -----------------------------------------------------
+ --
+ PROCEDURE pp_asigna_globales_ptd_mot
+ IS
+ BEGIN
+    --
+    trn_k_global.asigna('ptd_val_potencia'       ,ea_k_a2100420_n.f_val_potencia); 
+    trn_k_global.asigna('ptd_num_puertas'        ,ea_k_a2100420_n.f_num_puertas ); 
+    trn_k_global.asigna('ptd_cod_carroceria_vehi',trn.NULO                      ); 
+    trn_k_global.asigna('ptd_cod_categoria_vehi' ,trn.NULO                      ); 
+    --
+ END pp_asigna_globales_ptd_mot;
+ --
+ --
+ /* -------------------------------------------------------------------------
+ || p_val_marca:
+ || Procedimiento que valida la marca del vehiculo
+ */ -------------------------------------------------------------------------
+ --
+ PROCEDURE p_val_marca (p_cod_cia      a2100400.cod_cia    %TYPE,
+                        p_cod_marca    a2100400.cod_marca  %TYPE,
+                        p_fec_validez  a2100400.fec_validez%TYPE)
+ IS
+    --
+    l_t_valores         tron2000.trn_k_ptd.t_t_valores     ;
+    l_not_exist         EXCEPTION                          ;
+    PRAGMA              EXCEPTION_INIT(l_not_exist, -20001);
+    --
+ BEGIN
+    --
+    --Inicia Traza
+    trn_k_ptd.p_gen_comienzo_traza(p_nom_prg    => 'em_k_ptd_rsk_mot',
+                                   p_nom_metodo => 'p_val_marca'     );
+    --
+    -- Levanta el registro que nos devuelve el cod_marca
+    ea_k_a2100400_n.p_lee(p_cod_cia     => p_cod_cia    ,
+                          p_cod_marca   => p_cod_marca  ,
+                          p_fec_validez => p_fec_validez);
+    --
+    IF  ea_k_a2100400_n.f_mca_inh = 'S'
+    THEN
+       --
+       trn_k_ptd.p_gen_error(p_cod_idioma  => trn_k_ptd.f_dev_cod_idioma,
+                             p_cod_mensaje => 20020                     ,
+                             p_t_valores   => l_t_valores               ,
+                             p_pre_mensaje => trn_k_ptd.nulo            ,
+                             p_pos_mensaje => ':[CODIGO MARCA]'         );
+       --
+    END IF;
+    --
+    trn_k_global.asigna('txt_campo',ea_k_a2100400_n.f_nom_marca);
+    --
+    -- Termina la traza
+    trn_k_ptd.p_gen_final_traza(p_nom_prg    => 'em_k_ptd_rsk_mot',
+                                p_nom_metodo => 'p_val_marca'     );
+    --
+ EXCEPTION
+    WHEN l_not_exist 
+    THEN 
+       --
+       tron2000.trn_k_ptd.p_gen_error(p_cod_idioma  => tron2000.trn_k_ptd.f_dev_cod_idioma,
+                                      p_cod_mensaje => 10100003                           ,
+                                      p_t_valores   => l_t_valores                        ,
+                                      p_pre_mensaje => tron2000.trn_k_ptd.nulo            ,
+                                      p_pos_mensaje => ':[CODIGO MARCA]'                  );
+ -- 
+ END p_val_marca;
+ --
+ /* -------------------------------------------------------------------------
+ || p_val_modelo:
+ || Procedimiento que valida el modelo del vehiculo
+ */ -------------------------------------------------------------------------
+ --
+ PROCEDURE p_val_modelo (p_cod_cia       a2100410.cod_cia     %TYPE,
+                         p_cod_marca     a2100410.cod_marca   %TYPE,
+                         p_cod_modelo    a2100410.cod_modelo  %TYPE,
+                         p_fec_validez   a2100410.fec_validez %TYPE)
+ IS
+    --
+    l_t_valores          tron2000.trn_k_ptd.t_t_valores     ;
+    l_not_exist          EXCEPTION                          ;
+    PRAGMA               EXCEPTION_INIT(l_not_exist, -20001);
+    --
+ BEGIN
+    --
+    --Inicia Traza
+    trn_k_ptd.p_gen_final_traza(p_nom_prg     => 'em_k_ptd_rsk_mot',
+                                p_nom_metodo  => 'p_val_modelo'    );
+    --
+    -- levanta el registro que nos devuelve el cod_modelo
+    ea_k_a2100410_n.p_lee( p_cod_cia     => p_cod_cia    ,
+                           p_cod_marca   => p_cod_marca  ,
+                           p_cod_modelo  => p_cod_modelo ,
+                           p_fec_validez => p_fec_validez);
+    --
+    IF ea_k_a2100410_n.f_mca_inh = 'S'
+    THEN
+       --
+       trn_k_ptd.p_gen_error(p_cod_idioma  => trn_k_ptd.f_dev_cod_idioma,
+                             p_cod_mensaje => 20020                     ,
+                             p_t_valores   => l_t_valores               ,
+                             p_pre_mensaje => trn_k_ptd.nulo            ,
+                             p_pos_mensaje => ':[CODIGO MODELO]'        );
+        --
+    END IF;
+    --
+    trn_k_global.asigna('txt_campo',ea_k_a2100410_n.f_nom_modelo);
+    --
+    -- Termina la traza 
+    trn_k_ptd.p_gen_final_traza(p_nom_prg     => 'em_k_ptd_rsk_mot',
+                                p_nom_metodo  => 'p_val_modelo'    );
+    --
+ EXCEPTION
+    WHEN l_not_exist 
+    THEN 
+       --
+       tron2000.trn_k_ptd.p_gen_error(p_cod_idioma  => tron2000.trn_k_ptd.f_dev_cod_idioma,
+                                      p_cod_mensaje => 10100003                           ,
+                                      p_t_valores   => l_t_valores                        ,
+                                      p_pre_mensaje => tron2000.trn_k_ptd.nulo            ,
+                                      p_pos_mensaje => ':[CODIGO MODELO]'                 );
+       -- 
+ END p_val_modelo;
+ --
+ /* -------------------------------------------------------------------------
+ || p_val_sub_modelo:
+ || Procedimiento que valida el submodelo del vehiculo
+ */ -------------------------------------------------------------------------
+ --
+ PROCEDURE p_val_sub_modelo(p_cod_cia         a2100420.cod_cia        %TYPE,
+                            p_cod_marca       a2100420.cod_marca      %TYPE,
+                            p_cod_modelo      a2100420.cod_modelo     %TYPE,
+                            p_cod_sub_modelo  a2100420.cod_sub_modelo %TYPE,
+                            p_fec_validez     a2100420.fec_validez    %TYPE)
+ IS
+    --
+    l_t_valores             tron2000.trn_k_ptd.t_t_valores     ;
+    l_not_exist             EXCEPTION                          ;
+    PRAGMA                  EXCEPTION_INIT(l_not_exist, -20001);
+    --
+ BEGIN
+    --
+    --Inicia Traza
+    trn_k_ptd.p_gen_comienzo_traza(p_nom_prg    => 'em_k_ptd_rsk_mot',
+                                   p_nom_metodo => 'p_val_sub_modelo');
+    --
+    -- Levanta el registro que nos devuelve el cod_sub_modelo
+    ea_k_a2100420_n.p_lee(p_cod_cia        => p_cod_cia        ,
+                          p_cod_marca      => p_cod_marca      ,
+                          p_cod_modelo     => p_cod_modelo     ,
+                          p_cod_sub_modelo => p_cod_sub_modelo ,
+                          p_fec_validez    => p_fec_validez    );
+    --
+    IF ea_k_a2100420_n.f_mca_inh = 'S'
+    THEN
+       --
+       trn_k_ptd.p_gen_error(p_cod_idioma  => trn_k_ptd.f_dev_cod_idioma,
+                             p_cod_mensaje => 20020                     ,
+                             p_t_valores   => l_t_valores               ,
+                             p_pre_mensaje => trn_k_ptd.nulo            ,
+                             p_pos_mensaje => ':[CODIGO SUBMODELO]'     );
+       --
+    END IF;
+    --
+    trn_k_global.asigna('txt_campo',ea_k_a2100420_n.f_nom_sub_modelo);
+    --
+    pp_asigna_globales_ptd_mot;
+    --
+    trn_k_ptd.p_gen_final_traza(p_nom_prg    => 'em_k_ptd_rsk_mot',
+                                p_nom_metodo => 'p_val_sub_modelo');
+    --
+ EXCEPTION
+    WHEN l_not_exist
+    THEN
+       --
+       tron2000.trn_k_ptd.p_gen_error(p_cod_idioma  => tron2000.trn_k_ptd.f_dev_cod_idioma,
+                                      p_cod_mensaje => 10100003                           ,
+                                      p_t_valores   => l_t_valores                        ,
+                                      p_pre_mensaje => tron2000.trn_k_ptd.nulo            ,
+                                      p_pos_mensaje => ':[CODIGO SUBMODELO]'              );
+       -- 
+ END p_val_sub_modelo;
+ --
+ /* -----------------------------------------------------
+ || p_val_modalidad:
+ || Procedimiento que valida que la modalidad proporcionada
+ || sea correcta en funcion de ramo tipo y uso de 
+ || vehiculo
+ */ -----------------------------------------------------
+ --
+ PROCEDURE p_val_modalidad IS
+    --
+    l_t_valores         trn_k_ptd.t_t_valores;
+    l_lng_txt_campo     PLS_INTEGER          ;
+    --
+    l_cod_cia           x2000020.cod_cia        %TYPE;
+    l_cod_ramo          a2100310.cod_ramo       %TYPE;
+    l_cod_tip_vehi      x2000020.cod_campo      %TYPE;
+    l_cod_uso_vehi      x2000020.cod_campo      %TYPE;
+    l_mca_inh           a2100400.mca_inh        %TYPE;
+    l_fec_validez       a2100400.fec_validez    %TYPE;
+    l_cod_modalidad     A2100310.cod_modalidad  %TYPE;
+    l_txt_campo         x2000020.txt_campo      %TYPE;
+    --
+    l_not_exist         EXCEPTION                          ;
+    PRAGMA              EXCEPTION_INIT(l_not_exist, -20001);
+    l_invalid           EXCEPTION                          ;
+    PRAGMA              EXCEPTION_INIT(l_invalid  , -20020);
+    --
+ BEGIN
+    --Inicia Traza
+    trn_k_ptd.p_gen_comienzo_traza(p_nom_prg    => 'em_k_ptd_rsk_mot',
+                                   p_nom_metodo => 'p_val_modalidad');       
+    --
+    l_cod_cia         := TO_NUMBER(trn_k_global.devuelve('cod_cia'                      ));
+    l_cod_ramo        := TO_NUMBER(trn_k_global.devuelve('cod_ramo'                     ));
+    l_cod_modalidad   := TO_NUMBER(trn_k_global.devuelve(em_k_g2990015.f_dvcod_modalidad));
+    l_fec_validez     := TO_DATE(trn_k_global.devuelve('fec_validez'),'ddmmyyyy'         );
+    --
+    l_cod_tip_vehi    := TO_NUMBER(trn_k_global.devuelve(em_k_g2990015.f_dvcod_tip_vehi));
+    l_cod_uso_vehi    := TO_NUMBER(trn_k_global.devuelve(em_k_g2990015.f_dvcod_uso_vehi));     
+    --  
+    l_lng_txt_campo   := trn_f_lng_columna(p_nom_tabla   => 'X2000020' ,
+                                           p_nom_columna => 'TXT_CAMPO');
+    --
+    l_mca_inh := ea_f_a2100310_mca_inh(p_cod_cia       => l_cod_cia      ,
+                                       p_cod_ramo      => l_cod_ramo     ,
+                                       p_cod_tip_vehi  => l_cod_tip_vehi ,
+                                       p_cod_uso_vehi  => l_cod_uso_vehi ,
+                                       p_cod_modalidad => l_cod_modalidad,
+                                       p_fec_validez   => l_fec_validez  );
+    --
+    IF l_mca_inh = 'S'
+    THEN
+      --
+      RAISE l_invalid;
+      --
+    END IF;
+    --
+    l_txt_campo := SUBSTR(em_f_nom_modalidad(p_cod_cia       => l_cod_cia                       ,
+                                             p_cod_modalidad => l_cod_modalidad                 ,
+                                             p_fec_validez   => l_fec_validez),1,l_lng_txt_campo);
+    --
+    trn_k_global.asigna(p_variable => 'txt_campo',
+                        p_valor    => l_txt_campo);
+    -- Termina la traza 
+    trn_k_ptd.p_gen_final_traza(p_nom_prg    => 'em_k_ptd_rsk_mot',                                         
+                                p_nom_metodo => 'p_val_modalidad' );
+    --
+ EXCEPTION
+    WHEN l_not_exist
+    THEN
+       --
+       trn_k_ptd.p_gen_error(p_cod_idioma  => trn_k_ptd.f_dev_cod_idioma ,
+                             p_cod_mensaje => 20001                      ,
+                             p_t_valores   => l_t_valores                ,
+                             p_pre_mensaje => trn_k_ptd.NULO             ,
+                             p_pos_mensaje => ':[MODALIDAD]'             );
+       -- 
+    WHEN l_invalid
+    THEN
+       --
+       trn_k_ptd.p_gen_error(p_cod_idioma  => trn_k_ptd.f_dev_cod_idioma ,
+                             p_cod_mensaje => 20020                      ,
+                             p_t_valores   => l_t_valores                ,
+                             p_pre_mensaje => trn_k_ptd.NULO             ,
+                             p_pos_mensaje => ':[MODALIDAD]'             );
+       --
+ END p_val_modalidad;
+ --
+ /* -----------------------------------------------------
+ || p_val_modalidad:
+ || Procedimiento que valida que la modalidad proporcionada
+ || sea correcta en funcion de ramo tipo y uso de 
+ || vehiculo
+ */ -----------------------------------------------------
+ --
+ PROCEDURE p_val_modalidad (p_fec_validez  a2100310.fec_validez%TYPE)
+ IS
+    --
+    l_t_valores         trn_k_ptd.t_t_valores;
+    l_lng_txt_campo     PLS_INTEGER          ;
+    --
+    l_cod_cia           x2000020.cod_cia        %TYPE;
+    l_cod_ramo          a2100310.cod_ramo       %TYPE;
+    l_cod_tip_vehi      x2000020.cod_campo      %TYPE;
+    l_cod_uso_vehi      x2000020.cod_campo      %TYPE;
+    l_mca_inh           a2100400.mca_inh        %TYPE;
+    l_cod_modalidad     A2100310.cod_modalidad  %TYPE;
+    l_txt_campo         x2000020.txt_campo      %TYPE;
+    --
+    l_not_exist         EXCEPTION                          ;
+    PRAGMA              EXCEPTION_INIT(l_not_exist, -20001);
+    l_invalid           EXCEPTION                          ;
+    PRAGMA              EXCEPTION_INIT(l_invalid  , -20020 );
+    --
+ BEGIN
+    --Inicia Traza
+    trn_k_ptd.p_gen_comienzo_traza(p_nom_prg    => 'em_k_ptd_rsk_mot',
+                                   p_nom_metodo => 'p_val_modalidad');       
+    --
+    l_cod_cia         := TO_NUMBER(trn_k_global.devuelve('cod_cia'                      ));
+    l_cod_ramo        := TO_NUMBER(trn_k_global.devuelve('cod_ramo'                     ));
+    l_cod_modalidad   := TO_NUMBER(trn_k_global.devuelve(em_k_g2990015.f_dvcod_modalidad));
+    --
+    l_cod_tip_vehi    := TO_NUMBER(trn_k_global.devuelve(em_k_g2990015.f_dvcod_tip_vehi));
+    l_cod_uso_vehi    := TO_NUMBER(trn_k_global.devuelve(em_k_g2990015.f_dvcod_uso_vehi));     
+    --  
+    l_lng_txt_campo   := trn_f_lng_columna(p_nom_tabla   => 'X2000020' ,
+                                           p_nom_columna => 'TXT_CAMPO');
+    --
+    l_mca_inh := ea_f_a2100310_mca_inh(p_cod_cia       => l_cod_cia      ,
+                                       p_cod_ramo      => l_cod_ramo     ,
+                                       p_cod_tip_vehi  => l_cod_tip_vehi ,
+                                       p_cod_uso_vehi  => l_cod_uso_vehi ,
+                                       p_cod_modalidad => l_cod_modalidad,
+                                       p_fec_validez   => p_fec_validez  );
+    --
+    IF l_mca_inh = 'S'
+    THEN
+      --
+      RAISE l_invalid;
+      --
+    END IF;
+    --
+    l_txt_campo := SUBSTR(em_f_nom_modalidad(p_cod_cia       => l_cod_cia                       ,
+                                             p_cod_modalidad => l_cod_modalidad                 ,
+                                             p_fec_validez   => p_fec_validez),1,l_lng_txt_campo);
+    --
+    trn_k_global.asigna(p_variable => 'txt_campo',
+                        p_valor    => l_txt_campo);
+    -- Termina la traza 
+    trn_k_ptd.p_gen_final_traza(p_nom_prg    => 'em_k_ptd_rsk_mot',                                         
+                                p_nom_metodo => 'p_val_modalidad' );
+    --
+ EXCEPTION
+    WHEN l_not_exist
+    THEN
+       --
+       trn_k_ptd.p_gen_error(p_cod_idioma  => trn_k_ptd.f_dev_cod_idioma ,
+                             p_cod_mensaje => 20001                      ,
+                             p_t_valores   => l_t_valores                ,
+                             p_pre_mensaje => trn_k_ptd.NULO             ,
+                             p_pos_mensaje => ':[MODALIDAD]'             );
+       -- 
+    WHEN l_invalid
+    THEN
+       --
+       trn_k_ptd.p_gen_error(p_cod_idioma  => trn_k_ptd.f_dev_cod_idioma ,
+                             p_cod_mensaje => 20020                      ,
+                             p_t_valores   => l_t_valores                ,
+                             p_pre_mensaje => trn_k_ptd.NULO             ,
+                             p_pos_mensaje => ':[MODALIDAD]'             );
+       --
+ END p_val_modalidad;
+ --
+ /* -------------------------------------------------------------------------
+ || p_val_color:
+ || Procedimiento que valida del codigo del color del vehiculo.
+ || -----------------------------------------------------------------------*/
+ --
+ PROCEDURE p_val_color 
+ IS
+    --
+    l_val_campo           tron2000.x2000020.val_campo  %TYPE ;
+    l_t_valores           tron2000.trn_k_ptd.t_t_valores     ;
+    l_not_exist           EXCEPTION                          ;
+    PRAGMA                EXCEPTION_INIT(l_not_exist, -20001);
+    --
+    --
+ BEGIN
+    --
+    --Inicia Traza
+    tron2000.trn_k_ptd.p_gen_comienzo_traza(p_nom_prg    => 'em_k_ptd_rsk_mot',
+                                            p_nom_metodo => 'p_val_color'     );
+    --
+    --Recupera el cod_color
+    l_val_campo := tron2000.trn_k_global.f_devuelve_c(p_variable => 'VAL_CAMPO');
+    --Asigna la descripcion del cod_color 
+    tron2000.trn_k_global.asigna('txt_campo',tron2000.ea_f_nom_color(p_cod_color => l_val_campo));
+    --
+    -- Termina la traza 
+    tron2000.trn_k_ptd.p_gen_final_traza(p_nom_prg    => 'em_k_ptd_rsk_mot',
+                                         p_nom_metodo => 'p_val_color'     );
+   --
+   EXCEPTION
+    WHEN l_not_exist 
+    THEN 
+       --
+       tron2000.trn_k_ptd.p_gen_error(p_cod_idioma  => tron2000.trn_k_ptd.f_dev_cod_idioma,
+                                      p_cod_mensaje => 20001                              ,
+                                      p_t_valores   => l_t_valores                        ,
+                                      p_pre_mensaje => tron2000.trn_k_ptd.NULO            ,
+                                      p_pos_mensaje => 'COLOR DEL VEHICULO:[CODIGO COLOR]');
+       -- 
+ END p_val_color;
+ --
+ /* -----------------------------------------------------------
+ || p_val_uso_vehi
+ || Procedimiento que valida el uso de vehiculo
+ */ -----------------------------------------------------------
+ --
+ PROCEDURE p_val_uso_vehi (p_cod_cia      a2100200.cod_cia      %TYPE,
+                           p_cod_uso_vehi a2100200.cod_uso_vehi %TYPE,
+                           p_fec_validez  a2100200.fec_validez  %TYPE)
+ IS
+    --
+    l_t_valores  trn_k_ptd.t_t_valores  ;
+    --    
+    l_txt_campo  x2000020.txt_campo%TYPE;
+    --
+    l_reg        a2100200       %ROWTYPE;
+    --
+    l_not_exist  EXCEPTION                          ;
+    PRAGMA       EXCEPTION_INIT(l_not_exist, -20001);
+    l_invalid    EXCEPTION                          ;
+    PRAGMA       EXCEPTION_INIT(l_invalid, -20020  );
+    --    
+ BEGIN
+    --Inicia Traza
+    trn_k_ptd.p_gen_comienzo_traza(p_nom_prg    => 'em_k_ptd_rsk_mot',
+                                   p_nom_metodo => 'p_val_uso_vehi'  );       
+    --     
+    l_reg := ea_f_a2100200 (p_cod_cia       => p_cod_cia     ,                                     
+                            p_cod_uso_vehi  => p_cod_uso_vehi,
+                            p_fec_validez   => p_fec_validez );                                      
+    --  
+    l_txt_campo := l_reg.nom_uso_vehi;    
+    --
+    trn_k_global.asigna(p_variable => 'txt_campo',
+                        p_valor    => l_txt_campo);
+    -- Termina la traza 
+    trn_k_ptd.p_gen_final_traza(p_nom_prg    => 'em_k_ptd_rsk_mot',                                         
+                                p_nom_metodo => 'p_val_uso_vehi'  );
+    --
+ EXCEPTION
+    WHEN l_not_exist
+    THEN
+       --
+       tron2000.trn_k_ptd.p_gen_error(p_cod_idioma  => trn_k_ptd.f_dev_cod_idioma ,
+                                      p_cod_mensaje => 20001                      ,
+                                      p_t_valores   => l_t_valores                ,
+                                      p_pre_mensaje => trn_k_ptd.NULO             ,
+                                      p_pos_mensaje => ':[USO VEHICULO]'          );
+       -- 
+    WHEN l_invalid
+    THEN
+       --
+       tron2000.trn_k_ptd.p_gen_error(p_cod_idioma  => trn_k_ptd.f_dev_cod_idioma ,
+                                      p_cod_mensaje => 20020                      ,
+                                      p_t_valores   => l_t_valores                ,
+                                      p_pre_mensaje => trn_k_ptd.NULO             ,
+                                      p_pos_mensaje => ':[USO VEHICULO]'          );
+       --
+ END p_val_uso_vehi;  
+ --
+ /* -----------------------------------------------------------
+ || p_val_tip_vehi:
+ ||
+ || Procedimiento que valida el tipo de vehiculo
+ */ -----------------------------------------------------------
+ --
+ PROCEDURE p_val_tip_vehi (p_cod_cia      a2100100.cod_cia      %TYPE,
+                           p_cod_tip_vehi a2100100.cod_tip_vehi %TYPE,
+                           p_fec_validez  a2100100.fec_validez  %TYPE)
+ IS
+    --
+    l_t_valores  trn_k_ptd.t_t_valores      ;
+    --   
+    l_txt_campo  x2000020.txt_campo    %TYPE;
+    l_reg        a2100100           %ROWTYPE;
+    --
+    l_not_exist  EXCEPTION                          ;
+    PRAGMA       EXCEPTION_INIT(l_not_exist, -20001);
+    l_invalid    EXCEPTION                          ;
+    PRAGMA       EXCEPTION_INIT(l_invalid,   -20020);
+    --    
+ BEGIN
+    --Inicia Traza
+    trn_k_ptd.p_gen_comienzo_traza(p_nom_prg    => 'em_k_ptd_rsk_mot',
+                                   p_nom_metodo => 'p_val_tip_vehi'  );       
+    -- 
+    l_reg := ea_f_a2100100 (p_cod_cia       => p_cod_cia     ,                                     
+                            p_cod_tip_vehi  => p_cod_tip_vehi,
+                            p_fec_validez   => p_fec_validez );                                      
+    --  
+    l_txt_campo := l_reg.nom_tip_vehi;    
+    --
+    trn_k_global.asigna(p_variable => 'txt_campo',
+                        p_valor    => l_txt_campo);
+    -- Termina la traza 
+    trn_k_ptd.p_gen_final_traza(p_nom_prg    => 'em_k_ptd_rsk_mot',                                         
+                                p_nom_metodo => 'p_val_tip_vehi'  );
+    --
+ EXCEPTION
+    WHEN l_not_exist
+    THEN
+       --
+       trn_k_ptd.p_gen_error(p_cod_idioma  => trn_k_ptd.f_dev_cod_idioma ,
+                             p_cod_mensaje => 20001                      ,
+                             p_t_valores   => l_t_valores                ,
+                             p_pre_mensaje => trn_k_ptd.NULO             ,
+                             p_pos_mensaje => ':[TIPO VEHICULO]'         );
+       -- 
+    WHEN l_invalid
+    THEN
+       --
+       trn_k_ptd.p_gen_error(p_cod_idioma  => trn_k_ptd.f_dev_cod_idioma ,
+                             p_cod_mensaje => 20020                      ,
+                             p_t_valores   => l_t_valores                ,
+                             p_pre_mensaje => trn_k_ptd.NULO             ,
+                             p_pos_mensaje => ':[TIPO VEHICULO]'         );
+       --
+ END p_val_tip_vehi;  
+ --
+ /* -------------------------------------------------------------------------
+ || p_val_anio_sub_modelo:
+ || Procedimiento que valida que el modelo del anio sea del anio actual o del
+ || siguiente para que pueda ser indemnizado a valor factura
+ */ -------------------------------------------------------------------------
+ --
+ PROCEDURE p_val_anio_sub_modelo(p_fec_validez   a2100430.fec_validez%TYPE)
+ IS
+    --
+    l_cod_cia          a2100430.cod_cia              %TYPE;
+    l_cod_marca        a2100430.cod_marca            %TYPE;
+    l_cod_modelo       a2100430.cod_modelo           %TYPE;
+    l_cod_sub_modelo   a2100430.cod_sub_modelo       %TYPE;
+    l_anio_sub_modelo  a2100430.anio_sub_modelo      %TYPE;
+    --
+    l_t_valores        tron2000.trn_k_ptd.t_t_valores     ;
+    l_not_exist        EXCEPTION                          ;
+    PRAGMA             EXCEPTION_INIT(l_not_exist, -20001);
+    --
+ BEGIN
+    --
+    --Inicia Traza
+    trn_k_ptd.p_gen_comienzo_traza(p_nom_prg    => 'em_k_ptd_rsk_mot'     ,
+                                   p_nom_metodo => 'p_val_anio_sub_modelo');
+    --
+    l_cod_cia         := TO_NUMBER(trn_k_global.devuelve (p_variable => 'cod_cia'                         ));
+    l_cod_marca       := TO_NUMBER(trn_k_global.devuelve (p_variable => em_k_g2990015.f_dvcod_marca       ));
+    l_cod_modelo      := TO_NUMBER(trn_k_global.devuelve (p_variable => em_k_g2990015.f_dvcod_modelo      ));
+    l_cod_sub_modelo  := TO_NUMBER(trn_k_global.devuelve (p_variable => em_k_g2990015.f_dvcod_sub_modelo  ));
+    l_anio_sub_modelo := TO_NUMBER(trn_k_global.devuelve (p_variable => 'val_campo'                       ));
+    --
+    ea_k_a2100430_n.p_lee(p_cod_cia         => l_cod_cia        ,
+                          p_cod_marca       => l_cod_marca      ,
+                          p_cod_modelo      => l_cod_modelo     ,
+                          p_cod_sub_modelo  => l_cod_sub_modelo ,
+                          p_anio_sub_modelo => l_anio_sub_modelo,
+                          p_fec_validez     => p_fec_validez    );
+    --
+    IF ea_k_a2100430_n.f_mca_inh = 'S'
+    THEN
+       --
+       trn_k_ptd.p_gen_error(p_cod_idioma  => trn_k_ptd.f_dev_cod_idioma,
+                             p_cod_mensaje => 20020                     ,
+                             p_t_valores   => l_t_valores               ,
+                             p_pre_mensaje => trn_k_ptd.nulo            ,
+                             p_pos_mensaje => '[ANIO DEL SUBMODELO]'    );
+       --
+    END IF;
+    --
+    -- Termina la traza
+    trn_k_ptd.p_gen_final_traza(p_nom_prg    => 'em_k_ptd_rsk_mot'     ,
+                                p_nom_metodo => 'p_val_anio_sub_modelo');
+    --
+ EXCEPTION
+    WHEN l_not_exist
+    THEN
+       --
+       tron2000.trn_k_ptd.p_gen_error(p_cod_idioma  => tron2000.trn_k_ptd.f_dev_cod_idioma,
+                                      p_cod_mensaje => 10100003                           ,
+                                      p_t_valores   => l_t_valores                        ,
+                                      p_pre_mensaje => tron2000.trn_k_ptd.nulo            ,
+                                      p_pos_mensaje => '[ANIO DEL SUBMODELO]'             );
+       --
+ END p_val_anio_sub_modelo;
+ --
+ /* --------------------------------------------------------
+ || fp_cambia_mon_val_sub_modelo:
+ || Cambia el valor de la moneda de la tabla (a2100430) a la
+ || moneda de la poliza.
+ */ --------------------------------------------------------
+ --
+ FUNCTION fp_cambia_mon_val_sub_modelo(p_importe               a2100430.val_sub_modelo       %TYPE,
+                                       p_fec_cambio a1000500.fec_cambio    %TYPE)
+          RETURN NUMBER
+ IS
+    --
+    l_val_campo         NUMBER;
+    l_val_cambio_origen NUMBER;
+    --
+    l_cod_mon              a1000500.cod_mon              %TYPE;
+    l_num_decimales_primas g2990005.num_decimales_primas %TYPE;
+    l_val_cambio_salida    a1000500.val_cambio           %TYPE;
+    --
+ BEGIN
+    --
+    --Inicia Traza
+    trn_k_ptd.p_gen_comienzo_traza(p_nom_prg    => 'em_k_ptd_rsk_mot'            ,
+                                   p_nom_metodo => 'fp_cambia_mon_val_sub_modelo');
+    --
+    l_num_decimales_primas := TO_NUMBER(trn_k_global.devuelve(p_variable => 'num_decimales_primas'));
+    l_val_cambio_salida    := TO_NUMBER(trn_k_global.devuelve(p_variable => 'val_cambio'          ));
+    l_cod_mon              := ea_k_a2100430_n.f_cod_mon                                             ;
+    --
+    l_val_cambio_origen := tron2000.dc_f_val_cambio_trn(p_cod_mon    => l_cod_mon   ,
+                                                        p_fec_cambio => p_fec_cambio);
+    --
+    l_val_campo := tron2000.dc_k_oper_monedas.f_de_otro_a_otro(p_importe            => p_importe          ,
+                                                               p_val_cambio_entrada => l_val_cambio_origen,
+                                                               p_val_cambio_salida  => l_val_cambio_salida);
+    --
+    l_val_campo := ROUND(l_val_campo,l_num_decimales_primas);
+    --
+    -- Termina la traza
+    trn_k_ptd.p_gen_final_traza(p_nom_prg    => 'em_k_ptd_rsk_mot'            ,
+                                p_nom_metodo => 'fp_cambia_mon_val_sub_modelo');
+    --
+    RETURN l_val_campo;
+    --
+ END fp_cambia_mon_val_sub_modelo;
+ --
+ /* --------------------------------------------------------
+ || fp_cambia_mon_val_sub_modelo:
+ || Cambia el valor de la moneda de la tabla (a2100430) a la
+ || moneda de la poliza.
+ */ --------------------------------------------------------
+ --
+ FUNCTION fp_cambia_mon_val_sub_modelo(p_importe               a2100430.val_sub_modelo       %TYPE,
+                                       p_cod_mon               a1000500.cod_mon              %TYPE,
+                                       p_fec_cambio            a1000500.fec_cambio           %TYPE,
+                                       p_val_cambio_salida     a1000500.val_cambio           %TYPE,
+                                       p_num_decimales_primas  g2990005.num_decimales_primas %TYPE)
+          RETURN NUMBER
+ IS
+    --
+    l_val_campo                             NUMBER;
+    l_val_cambio_origen                     NUMBER;
+    l_val_cambio_entrada  a1000500.val_cambio%TYPE;
+    --
+ BEGIN
+    --
+    --Inicia Traza
+    trn_k_ptd.p_gen_comienzo_traza(p_nom_prg    => 'em_k_ptd_rsk_mot'            ,
+                                   p_nom_metodo => 'fp_cambia_mon_val_sub_modelo');
+    --
+    l_val_cambio_origen := tron2000.dc_f_val_cambio_trn(p_cod_mon    => p_cod_mon   ,
+                                                        p_fec_cambio => p_fec_cambio);
+    --
+    l_val_campo := tron2000.dc_k_oper_monedas.f_de_otro_a_otro(p_importe            => p_importe           ,
+                                                               p_val_cambio_entrada => l_val_cambio_origen ,
+                                                               p_val_cambio_salida  => p_val_cambio_salida);
+    --
+    l_val_campo := ROUND(l_val_campo,p_num_decimales_primas);
+    --
+    -- Termina la traza
+    trn_k_ptd.p_gen_final_traza(p_nom_prg    => 'em_k_ptd_rsk_mot'            ,
+                                p_nom_metodo => 'fp_cambia_mon_val_sub_modelo');
+    --
+    RETURN l_val_campo;
+    --
+ END fp_cambia_mon_val_sub_modelo;
+ --
+ /* ------------------------------------------------------------------
+ || p_val_val_sub_modelo:
+ || Valida que exista el valor del submodelo ingresado,
+ || despues convierte este importe al valor de la moneda de la poliza,
+ || posterior a ello valida que este dentro de los rangos
+ || permitidos del catalogo a2100430, valor minimo y maximo
+ */ -------------------------------------------------------------------
+ --
+ /*PROCEDURE p_val_val_sub_modelo(p_fec_cambio    a1000500.fec_cambio %TYPE,
+                                p_fec_validez   a2100430.fec_validez%TYPE)
+ IS
+    --
+    l_val_campo              x2000020.val_campo            %TYPE;
+    l_num_decimales_primas   g2990005.num_decimales_primas %TYPE;
+    l_cod_mon                a1000500.cod_mon              %TYPE;
+    l_cod_cia                a2100430.cod_cia              %TYPE;
+    l_cod_marca              a2100430.cod_marca            %TYPE;
+    l_cod_modelo             a2100430.cod_modelo           %TYPE;
+    l_cod_sub_modelo         a2100430.cod_sub_modelo       %TYPE;
+    l_val_sub_modelo         a2100430.val_sub_modelo       %TYPE;
+    l_val_sub_modelo_min     a2100430.val_sub_modelo_min   %TYPE;
+    l_val_sub_modelo_max     a2100430.val_sub_modelo_max   %TYPE;
+    l_val_cambio_salida      a1000500.val_cambio           %TYPE;
+    l_anio_sub_modelo        a2100430.anio_sub_modelo      %TYPE;
+    l_t_valores              trn_k_ptd.t_t_valores              ;
+    --
+    l_not_exist              EXCEPTION                          ;
+    PRAGMA                   EXCEPTION_INIT(l_not_exist, -20001);
+    --
+ BEGIN
+    --
+    --Inicia Traza
+    trn_k_ptd.p_gen_comienzo_traza(p_nom_prg    => 'em_k_ptd_rsk_mot'    ,
+                                   p_nom_metodo => 'p_val_val_sub_modelo');
+    --
+    -- Recupera el valor de la factura y se lo asigna val_sub_modelo
+    -- el cual se ocupa para validar  que se encuentre dentro de los
+    -- rangos de min y max del valor del submodelo
+    l_cod_cia               := TO_NUMBER(trn_k_global.devuelve(p_variable => 'cod_cia'                         ));
+    l_cod_marca             := TO_NUMBER(trn_k_global.devuelve(p_variable => em_k_g2990015.f_dvcod_marca       ));
+    l_anio_sub_modelo       := TO_NUMBER(trn_k_global.devuelve(p_variable => em_k_g2990015.f_dvanio_sub_modelo ));
+    l_cod_modelo            := TO_NUMBER(trn_k_global.devuelve(p_variable => em_k_g2990015.f_dvcod_modelo      ));
+    l_cod_sub_modelo        := TO_NUMBER(trn_k_global.devuelve(p_variable => em_k_g2990015.f_dvcod_sub_modelo  ));
+    l_num_decimales_primas  := TO_NUMBER(trn_k_global.devuelve(p_variable => 'num_decimales_primas'            ));
+    l_val_cambio_salida     := TO_NUMBER(trn_k_global.devuelve(p_variable => 'val_cambio'                      ));
+    --
+    ea_k_a2100430_n.p_lee(p_cod_cia         => l_cod_cia        ,
+                          p_cod_marca       => l_cod_marca      ,
+                          p_cod_modelo      => l_cod_modelo     ,
+                          p_cod_sub_modelo  => l_cod_sub_modelo ,
+                          p_anio_sub_modelo => l_anio_sub_modelo,
+                          p_fec_validez     => p_fec_validez    );
+    --
+    IF ea_k_a2100430_n.f_mca_inh = 'S'
+    THEN
+       --
+       trn_k_ptd.p_gen_error(p_cod_idioma  => trn_k_ptd.f_dev_cod_idioma,
+                             p_cod_mensaje => 20020                     ,
+                             p_t_valores   => l_t_valores               ,
+                             p_pre_mensaje => trn_k_ptd.nulo            ,
+                             p_pos_mensaje => '[VALOR DEL SUBMODELO]'   );
+       --
+    END IF;
+    --
+    l_val_campo             := trn_k_global.f_devuelve_n(p_variable => 'val_campo');
+    --
+    l_cod_mon               := ea_k_a2100430_n.f_cod_mon;
+    --
+    l_val_sub_modelo        := NVL(ea_k_a2100430_n.f_val_sub_modelo_min,l_val_campo);
+    --
+    l_val_sub_modelo_min    := fp_cambia_mon_val_sub_modelo(p_importe              => l_val_sub_modelo      ,
+                                                            p_cod_mon              => l_cod_mon             ,
+                                                            p_fec_cambio           => p_fec_cambio          ,
+                                                            p_val_cambio_salida    => l_val_cambio_salida   ,
+                                                            p_num_decimales_primas => l_num_decimales_primas);
+    --
+    l_val_sub_modelo        := NVL(ea_k_a2100430_n.f_val_sub_modelo_max,l_val_campo);
+    --
+    l_val_sub_modelo_max    := fp_cambia_mon_val_sub_modelo(p_importe              => l_val_sub_modelo      ,
+                                                            p_cod_mon              => l_cod_mon             ,
+                                                            p_fec_cambio           => p_fec_cambio          ,
+                                                            p_val_cambio_salida    => l_val_cambio_salida   ,
+                                                            p_num_decimales_primas => l_num_decimales_primas);
+    --
+    IF l_val_campo
+       NOT BETWEEN l_val_sub_modelo_min
+               AND l_val_sub_modelo_max
+    THEN
+       --
+       trn_k_global.asigna(p_variable => 'val_campo',p_valor => trn.NULO);
+       trn_k_global.asigna(p_variable => 'mca_salto',p_valor => trn.SI  );
+       --
+       trn_k_ptd.p_gen_error(p_cod_idioma  => trn_k_ptd.f_dev_cod_idioma                             ,
+                             p_cod_mensaje => 20005                                                  ,
+                             p_t_valores   => l_t_valores                                            ,
+                             p_pre_mensaje => trn.NULO                                               ,
+                             p_pos_mensaje => '. VALOR FUERA DE RANGO:[VALOR DEL SUBMODELO]'||
+                                              '. EL VALOR DEBE ESTAR ENTRE '                ||
+                                              CHR('36')||to_char(l_val_sub_modelo_min,'9G999G999D99' )
+                                              || ' y ' ||
+                                              CHR('36')||to_char(l_val_sub_modelo_max,'9G999G999D99'));
+       --
+    END IF;
+    --
+    -- Termina la traza
+    trn_k_ptd.p_gen_final_traza(p_nom_prg    => 'em_k_ptd_rsk_mot'    ,
+                                p_nom_metodo => 'p_val_val_sub_modelo');
+    --
+ EXCEPTION
+    WHEN l_not_exist
+    THEN
+       --
+       tron2000.trn_k_ptd.p_gen_error(p_cod_idioma  => tron2000.trn_k_ptd.f_dev_cod_idioma,
+                                      p_cod_mensaje => 10100003                           ,
+                                      p_t_valores   => l_t_valores                        ,
+                                      p_pre_mensaje => tron2000.trn_k_ptd.nulo            ,
+                                      p_pos_mensaje => ':[VALOR DEL SUBMODELO]'           );
+       --
+ END p_val_val_sub_modelo;*/
+ --
+ /* --------------------------------------------------------
+ || f_dev_val_sub_modelo:
+ || Devuelve el valor del sub modelo del catalogo a2100430
+ */ --------------------------------------------------------
+ --
+ FUNCTION f_dev_val_sub_modelo(p_fec_cambio     a1000500.fec_cambio %TYPE,
+                               p_fec_validez    a2100430.fec_validez%TYPE)
+          RETURN NUMBER
+ IS
+    --
+    l_num_decimales_primas   g2990005.num_decimales_primas %TYPE;
+    l_val_cambio             a1000500.val_cambio           %TYPE;
+    l_cod_mon                a1000500.cod_mon              %TYPE;
+    l_cod_cia                a2100430.cod_cia              %TYPE;
+    l_cod_marca              a2100430.cod_marca            %TYPE;
+    l_cod_modelo             a2100430.cod_modelo           %TYPE;
+    l_cod_sub_modelo         a2100430.cod_sub_modelo       %TYPE;
+    l_val_sub_modelo         a2100430.val_sub_modelo       %TYPE;
+    l_val_sub_modelo_min     a2100430.val_sub_modelo_min   %TYPE;
+    l_val_sub_modelo_max     a2100430.val_sub_modelo_max   %TYPE;
+    l_val_cambio_salida      a1000500.val_cambio           %TYPE;
+    l_anio_sub_modelo        a2100430.anio_sub_modelo      %TYPE;
+    l_t_valores              trn_k_ptd.t_t_valores              ;
+    --
+    l_not_exist              EXCEPTION                          ;
+    PRAGMA                   EXCEPTION_INIT(l_not_exist, -20001);
+    --
+ BEGIN
+    --
+    --Inicia Traza
+    trn_k_ptd.p_gen_comienzo_traza(p_nom_prg    => 'em_k_ptd_rsk_mot'    ,
+                                   p_nom_metodo => 'f_dev_val_sub_modelo');
+    --
+    l_cod_cia               := TO_NUMBER(trn_k_global.devuelve(p_variable => 'cod_cia'                         ));
+    l_cod_marca             := TO_NUMBER(trn_k_global.devuelve(p_variable => em_k_g2990015.f_dvcod_marca       ));
+    l_anio_sub_modelo       := TO_NUMBER(trn_k_global.devuelve(p_variable => em_k_g2990015.f_dvanio_sub_modelo ));
+    l_cod_modelo            := TO_NUMBER(trn_k_global.devuelve(p_variable => em_k_g2990015.f_dvcod_modelo      ));
+    l_cod_sub_modelo        := TO_NUMBER(trn_k_global.devuelve(p_variable => em_k_g2990015.f_dvcod_sub_modelo  ));
+    l_num_decimales_primas  := TO_NUMBER(trn_k_global.devuelve(p_variable => 'num_decimales_primas'            ));
+    l_val_cambio_salida     := TO_NUMBER(trn_k_global.devuelve(p_variable => 'val_cambio'                      ));
+    --
+    ea_k_a2100430_n.p_lee(p_cod_cia         => l_cod_cia        ,
+                          p_cod_marca       => l_cod_marca      ,
+                          p_cod_modelo      => l_cod_modelo     ,
+                          p_cod_sub_modelo  => l_cod_sub_modelo ,
+                          p_anio_sub_modelo => l_anio_sub_modelo,
+                          p_fec_validez     => p_fec_validez    );
+    --
+    IF ea_k_a2100430_n.f_mca_inh = 'S'
+    THEN
+       --
+       trn_k_ptd.p_gen_error(p_cod_idioma  => trn_k_ptd.f_dev_cod_idioma,
+                             p_cod_mensaje => 20020                     ,
+                             p_t_valores   => l_t_valores               ,
+                             p_pre_mensaje => trn_k_ptd.nulo            ,
+                             p_pos_mensaje => '[VALOR DEL SUBMODELO]'   );
+       --
+    END IF;
+    --
+    l_cod_mon               := ea_k_a2100430_n.f_cod_mon       ;
+    l_val_sub_modelo        := ea_k_a2100430_n.f_val_sub_modelo;
+    --
+    l_val_sub_modelo        := fp_cambia_mon_val_sub_modelo(p_importe              => l_val_sub_modelo      ,
+                                                            p_cod_mon              => l_cod_mon             ,
+                                                            p_fec_cambio           => p_fec_cambio          ,
+                                                            p_val_cambio_salida    => l_val_cambio_salida   ,
+                                                            p_num_decimales_primas => l_num_decimales_primas);
+    -- Termina la traza
+    trn_k_ptd.p_gen_final_traza(p_nom_prg    => 'em_k_ptd_rsk_mot'    ,
+                                p_nom_metodo => 'f_dev_val_sub_modelo');
+    --
+    RETURN l_val_sub_modelo;
+    --
+ EXCEPTION
+    WHEN l_not_exist
+    THEN
+       --
+       tron2000.trn_k_ptd.p_gen_error(p_cod_idioma  => tron2000.trn_k_ptd.f_dev_cod_idioma,
+                                      p_cod_mensaje => 10100003                           ,
+                                      p_t_valores   => l_t_valores                        ,
+                                      p_pre_mensaje => tron2000.trn_k_ptd.nulo            ,
+                                      p_pos_mensaje => ':[VALOR DEL SUBMODELO]'           );
+       --
+ END f_dev_val_sub_modelo;
+ --
+ /* --------------------------------------------------------
+ || pp_ini_val_sub_modelo:
+ || Inicializa y recupera valores de globales para los metodos
+ || relacionados con val_sub_modelo
+ */ --------------------------------------------------------
+ --
+ PROCEDURE pp_ini_val_sub_modelo
+ IS
+ BEGIN
+    --
+    --Inicia Traza
+    trn_k_ptd.p_gen_comienzo_traza(p_nom_prg    => 'em_k_ptd_rsk_mot'     ,
+                                   p_nom_metodo => 'pp_ini_val_sub_modelo');
+    --
+    g_cod_cia         := TO_NUMBER(trn_k_global.devuelve(p_variable => 'cod_cia'                        ));
+    g_cod_marca       := TO_NUMBER(trn_k_global.devuelve(p_variable => em_k_g2990015.f_dvcod_marca      ));
+    g_anio_sub_modelo := TO_NUMBER(trn_k_global.devuelve(p_variable => em_k_g2990015.f_dvanio_sub_modelo));
+    g_cod_modelo      := TO_NUMBER(trn_k_global.devuelve(p_variable => em_k_g2990015.f_dvcod_modelo     ));
+    g_cod_sub_modelo  := TO_NUMBER(trn_k_global.devuelve(p_variable => em_k_g2990015.f_dvcod_sub_modelo ));
+    g_val_sub_modelo  := TO_NUMBER(trn_k_global.devuelve(p_variable => em_k_g2990015.f_dvval_sub_modelo ));
+    --
+    trn_k_ptd.p_gen_final_traza(p_nom_prg    => 'em_k_ptd_rsk_mot'     ,
+                                p_nom_metodo => 'pp_ini_val_sub_modelo');
+     --
+ END pp_ini_val_sub_modelo;
+ --
+ /* --------------------------------------------------------
+ || fp_lee_val_sub_modelo:
+ || Cambia el valor de la moneda de la tabla (a2100430) a la
+ || moneda de la poliza.
+ */ --------------------------------------------------------
+ --
+ PROCEDURE pp_lee_val_sub_modelo(p_fec_validez a2100430.fec_validez%TYPE)
+ IS
+    --
+    l_t_valores       trn_k_ptd.t_t_valores        ;
+    --
+    l_not_exist EXCEPTION                          ;
+    PRAGMA      EXCEPTION_INIT(l_not_exist, -20001);
+    --
+ BEGIN
+    --
+    --Inicia Traza
+    trn_k_ptd.p_gen_comienzo_traza(p_nom_prg    => 'em_k_ptd_rsk_mot'     ,
+                                   p_nom_metodo => 'pp_lee_val_sub_modelo');
+    --
+    pp_ini_val_sub_modelo;
+    --
+    ea_k_a2100430_n.p_lee(p_cod_cia         => g_cod_cia        ,
+                          p_cod_marca       => g_cod_marca      ,
+                          p_cod_modelo      => g_cod_modelo     ,
+                          p_cod_sub_modelo  => g_cod_sub_modelo ,
+                          p_anio_sub_modelo => g_anio_sub_modelo,
+                          p_fec_validez     => p_fec_validez    );
+    -- 
+    IF ea_k_a2100430_n.f_mca_inh = 'S'
+    THEN
+       --
+       trn_k_ptd.p_gen_error(p_cod_idioma  => trn_k_ptd.f_dev_cod_idioma,
+                             p_cod_mensaje => 20020                     ,
+                             p_t_valores   => l_t_valores               ,
+                             p_pre_mensaje => trn_k_ptd.nulo            ,
+                             p_pos_mensaje => '[VALOR DEL SUBMODELO]'   );
+       --
+    END IF;
+    --
+    -- Termina la traza
+    trn_k_ptd.p_gen_final_traza(p_nom_prg    => 'em_k_ptd_rsk_mot'     ,
+                                p_nom_metodo => 'pp_lee_val_sub_modelo');
+    --
+ EXCEPTION
+ WHEN l_not_exist
+    THEN
+       --
+       tron2000.trn_k_ptd.p_gen_error(p_cod_idioma  => tron2000.trn_k_ptd.f_dev_cod_idioma,
+                                      p_cod_mensaje => 20001                              ,
+                                      p_t_valores   => l_t_valores                        ,
+                                      p_pre_mensaje => tron2000.trn_k_ptd.nulo            ,
+                                      p_pos_mensaje => '[VALOR DEL SUBMODELO]'           );
+       --
+ END pp_lee_val_sub_modelo;
+ --
+ /* -------------------------------------------------------------------------
+ || p_pre_val_sub_modelo:
+ ||
+ || Procedimiento previo del campo val_sub_modelo
+ */ -------------------------------------------------------------------------
+ --
+ PROCEDURE p_pre_val_sub_modelo(p_fec_cambio  a1000500.fec_cambio %TYPE,
+                                p_fec_validez a2100430.fec_validez%TYPE)
+ IS
+    --
+    l_val_sub_modelo  a2100430.val_sub_modelo%TYPE;
+    --
+ BEGIN
+    --
+    --Inicia Traza
+    trn_k_ptd.p_gen_comienzo_traza(p_nom_prg    => 'em_k_ptd_rsk_mot'   ,
+                                   p_nom_metodo => 'p_pre_val_submodelo');
+    --
+    pp_ini_val_sub_modelo;
+    --
+    IF em_k_ptd_gni.f_dev_tip_spto IN (em_k_ptd_gni.NUEVA_EMISION,em_k_ptd_gni.RENOVACION) 
+    THEN
+       --
+       IF    em_k_ptd_gni.f_dev_tip_spto = em_k_ptd_gni.NUEVA_EMISION
+          OR
+             (   em_k_ptd_gni.f_dev_tip_spto = em_k_ptd_gni.RENOVACION
+             AND em_k_ptd.f_dev_tip_mvto_batch IS NULL
+             )
+       THEN
+          --
+          IF g_val_sub_modelo IS NULL
+          THEN
+             --
+             pp_lee_val_sub_modelo(p_fec_validez => p_fec_validez);
+             --
+             l_val_sub_modelo := fp_cambia_mon_val_sub_modelo(p_importe    => ea_k_a2100430_n.f_val_sub_modelo,
+                                                              p_fec_cambio => p_fec_cambio                    );
+             --
+          ELSE
+             --
+             l_val_sub_modelo := g_val_sub_modelo;
+             --
+          END IF;
+          --
+       ELSE
+          --
+          ea_k_g2100010.p_lee(p_cod_cia     => g_cod_cia                  ,
+                              p_cod_ramo    => em_k_ptd_gni.f_dev_cod_ramo,
+                              p_fec_validez => p_fec_validez              );
+          --
+          l_val_sub_modelo := g_val_sub_modelo;
+          --
+          l_val_sub_modelo := em_k_regulariza.f_regulariza(p_cod_cia            => g_cod_cia                                                ,
+                                                           p_num_poliza         => em_k_ptd_gni.f_dev_num_poliza                            ,
+                                                           p_cod_ramo           => em_k_ptd_gni.f_dev_cod_ramo                              ,
+                                                           p_num_riesgo         => em_k_ptd_rsk.f_dev_num_riesgo                            ,
+                                                           p_cod_campo          => REPLACE(em_k_ptd_atr.f_dev_cod_campo,'DV',trn_k_ptd.NULO),
+                                                           p_tip_nivel          => trn_k_ptd.NULO                                           ,
+                                                           p_cod_cob            => trn_k_ptd.NULO                                           ,
+                                                           p_cod_accesorio      => trn_k_ptd.NULO                                           ,
+                                                           p_cod_lista          => trn_k_ptd.NULO                                           ,
+                                                           p_num_ocurrencia     => trn_k_ptd.NULO                                           ,
+                                                           p_mca_deprecia       => ea_k_g2100010.f_mca_deprecia_vehi                        ,
+                                                           p_tip_regulariza     => ea_k_g2100010.f_tip_regulariza_vehi                      ,
+                                                           p_tip_regulariza_esp => ea_k_g2100010.f_tip_regulariza_esp_vehi                  ,
+                                                           p_pct_regulariza_esp => ea_k_g2100010.f_pct_regulariza_esp_vehi                  ,
+                                                           p_cod_indice         => ea_k_g2100010.f_cod_indice_vehi                          ,
+                                                           p_nom_prg_regulariza => ea_k_g2100010.f_nom_prg_regulariza_esp_vehi              ,
+                                                           p_suma_aseg          => l_val_sub_modelo                                              );
+          --
+       END IF;
+       --
+   ELSIF    em_f_cambio_valor_campo(p_cod_campo => em_k_g2990015.f_cod_marca)       = trn_k_ptd.SI
+         OR em_f_cambio_valor_campo(p_cod_campo => em_k_g2990015.f_cod_modelo)      = trn_k_ptd.SI
+         OR em_f_cambio_valor_campo(p_cod_campo => em_k_g2990015.f_cod_sub_modelo)  = trn_k_ptd.SI
+         OR em_f_cambio_valor_campo(p_cod_campo => em_k_g2990015.f_anio_sub_modelo) = trn_k_ptd.SI
+   THEN
+      --
+      pp_lee_val_sub_modelo(p_fec_validez => p_fec_validez);
+      --
+      l_val_sub_modelo := fp_cambia_mon_val_sub_modelo(p_importe    => ea_k_a2100430_n.f_val_sub_modelo,
+                                                       p_fec_cambio => p_fec_cambio                    );
+      --
+   ELSE
+      --
+      l_val_sub_modelo := NVL(trn_k_global.devuelve('val_campo_ant'),g_val_sub_modelo);
+      --
+   END IF;
+   --
+   em_k_ptd_atr.p_asg_val_campo(p_val_campo => l_val_sub_modelo);
+	 --
+   -- Termina la traza 
+   trn_k_ptd.p_gen_final_traza(p_nom_prg     => 'em_k_ptd_rsk_mot'   ,
+                               p_nom_metodo  => 'p_pre_val_submodelo');
+   --
+ END p_pre_val_sub_modelo;
+ --
+ /* ------------------------------------------------------------------
+ || p_val_val_sub_modelo:
+ || Valida que exista el valor del submodelo ingresado,
+ || despues convierte este importe al valor de la moneda de la poliza,
+ || posterior a ello valida que este dentro de los rangos
+ || permitidos del catalogo a2100430, valor minimo y maximo
+ */ -------------------------------------------------------------------
+ --
+ PROCEDURE p_val_val_sub_modelo(p_fec_cambio  a1000500.fec_cambio %TYPE,
+                                p_fec_validez a2100430.fec_validez%TYPE)
+ IS
+    --
+    l_val_sub_modelo     a2100430.val_sub_modelo    %TYPE;
+    l_val_sub_modelo_min a2100430.val_sub_modelo_min%TYPE;
+    l_val_sub_modelo_max a2100430.val_sub_modelo_max%TYPE;
+    --
+ BEGIN
+    --
+    --Inicia Traza
+    trn_k_ptd.p_gen_comienzo_traza(p_nom_prg    => 'em_k_ptd_rsk_mot'    ,
+                                   p_nom_metodo => 'p_val_val_sub_modelo');
+    --
+    -- Recupera el valor de la factura y se lo asigna val_sub_modelo
+    -- el cual se ocupa para validar  que se encuentre dentro de los
+    -- rangos de min y max del valor del submodelo
+    --
+    pp_lee_val_sub_modelo(p_fec_validez => p_fec_validez);
+    --
+    l_val_sub_modelo := TO_NUMBER(em_k_ptd_atr.f_dev_val_campo);
+    --
+    l_val_sub_modelo_min := fp_cambia_mon_val_sub_modelo(p_importe    => ea_k_a2100430_n.f_val_sub_modelo_min,
+                                                         p_fec_cambio => p_fec_cambio                        );
+    --
+    l_val_sub_modelo_max := fp_cambia_mon_val_sub_modelo(p_importe    => ea_k_a2100430_n.f_val_sub_modelo_max,
+                                                         p_fec_cambio => p_fec_cambio                        );
+    --
+    trn_k_ptd.p_val_entre(p_valor_campo => l_val_sub_modelo          ,
+                          p_valor_min   => l_val_sub_modelo_min      ,
+                          p_valor_max   => l_val_sub_modelo_max      ,
+                          p_cod_idioma  => trn_k_ptd.f_dev_cod_idioma);
+    --
+    -- Termina la traza
+    trn_k_ptd.p_gen_final_traza(p_nom_prg    => 'em_k_ptd_rsk_mot'    ,
+                                p_nom_metodo => 'p_val_val_sub_modelo');
+    --
+ END p_val_val_sub_modelo;
+ --
+ --
+ /* -----------------------------------------------------
+ || f_con_val_sub_modelo:
+ || 
+ || Devuelve informacion de los valores del vehiculo
+ */ -----------------------------------------------------
+ --
+ FUNCTION f_con_val_sub_modelo(p_cod_cia           a2100430.cod_cia        %TYPE,
+                               p_cod_marca         a2100430.cod_marca      %TYPE,
+                               p_cod_modelo        a2100430.cod_modelo     %TYPE,
+                               p_cod_sub_modelo    a2100430.cod_sub_modelo %TYPE,
+                               p_anio_sub_modelo   a2100430.anio_sub_modelo%TYPE,
+                               p_fec_validez       a2100430.fec_validez    %TYPE)
+           RETURN record_valor_vehiculo
+ IS   
+    --
+    l_reg_valor_vehiculo record_valor_vehiculo;
+    l_reg_a2100430            a2100430%ROWTYPE;
+    --
+ BEGIN
+    --
+    trn_k_ptd.p_gen_comienzo_traza(p_nom_prg    => 'em_k_ptd_rsk_mot'    ,
+                                   p_nom_metodo => 'f_con_val_sub_modelo');
+    --
+    trn_k_ptd.p_gen_traza_parametro(p_nom_prg       => 'em_k_ptd_rsk_mot',
+                                    p_nom_parametro => 'p_cod_cia'       ,
+                                    p_val_parametro => p_cod_cia         );
+    --
+    trn_k_ptd.p_gen_traza_parametro(p_nom_prg       => 'em_k_ptd_rsk_mot',
+                                    p_nom_parametro => 'p_cod_marca'     ,
+                                    p_val_parametro => p_cod_marca       );
+    -- 
+    trn_k_ptd.p_gen_traza_parametro(p_nom_prg       => 'em_k_ptd_rsk_mot',
+                                    p_nom_parametro => 'p_cod_modelo'    ,
+                                    p_val_parametro => p_cod_modelo      );
+    --
+    trn_k_ptd.p_gen_traza_parametro(p_nom_prg       => 'em_k_ptd_rsk_mot',
+                                    p_nom_parametro => 'p_cod_sub_modelo',
+                                    p_val_parametro => p_cod_sub_modelo  );
+    --
+    trn_k_ptd.p_gen_traza_parametro(p_nom_prg       => 'em_k_ptd_rsk_mot' ,
+                                    p_nom_parametro => 'p_anio_sub_modelo',
+                                    p_val_parametro => p_anio_sub_modelo  );
+    --
+    em_k_a2100430.p_lee(p_cod_cia         => p_cod_cia        ,
+                        p_cod_marca       => p_cod_marca      ,
+                        p_cod_modelo      => p_cod_modelo     ,
+                        p_cod_sub_modelo  => p_cod_sub_modelo ,
+                        p_anio_sub_modelo => p_anio_sub_modelo,
+                        p_fec_validez     => p_fec_validez    );
+    --
+    l_reg_a2100430 := em_k_a2100430.f_devuelve_reg;
+    --
+    l_reg_valor_vehiculo.cod_cia            := l_reg_a2100430.cod_cia           ;
+    l_reg_valor_vehiculo.cod_marca          := l_reg_a2100430.cod_marca         ;
+    l_reg_valor_vehiculo.cod_modelo         := l_reg_a2100430.cod_modelo        ;
+    l_reg_valor_vehiculo.cod_sub_modelo     := l_reg_a2100430.cod_sub_modelo    ;
+    l_reg_valor_vehiculo.anio_sub_modelo    := l_reg_a2100430.anio_sub_modelo   ;
+    l_reg_valor_vehiculo.cod_mon            := l_reg_a2100430.cod_mon           ;
+    l_reg_valor_vehiculo.val_sub_modelo     := l_reg_a2100430.val_sub_modelo    ;
+    l_reg_valor_vehiculo.val_sub_modelo_max := l_reg_a2100430.val_sub_modelo_max;
+    l_reg_valor_vehiculo.val_sub_modelo_min := l_reg_a2100430.val_sub_modelo_min;
+    l_reg_valor_vehiculo.mca_inh            := l_reg_a2100430.mca_inh           ;
+    l_reg_valor_vehiculo.fec_validez        := l_reg_a2100430.fec_validez       ;
+    l_reg_valor_vehiculo.cod_usr            := l_reg_a2100430.cod_usr           ;
+    l_reg_valor_vehiculo.fec_actu           := l_reg_a2100430.fec_actu          ;
+    l_reg_valor_vehiculo.cod_tab_ref        := l_reg_a2100430.cod_tab_ref       ;
+    l_reg_valor_vehiculo.val_sub_modelo_1   := trn_k_ptd.CERO                   ; 
+    l_reg_valor_vehiculo.val_sub_modelo_2   := trn_k_ptd.CERO                   ;
+    l_reg_valor_vehiculo.val_sub_modelo_3   := trn_k_ptd.CERO                   ;
+    l_reg_valor_vehiculo.val_sub_modelo_4   := trn_k_ptd.CERO                   ;
+    l_reg_valor_vehiculo.val_sub_modelo_5   := trn_k_ptd.CERO                   ;
+    l_reg_valor_vehiculo.val_sub_modelo_6   := trn_k_ptd.CERO                   ;
+    l_reg_valor_vehiculo.val_sub_modelo_7   := trn_k_ptd.CERO                   ;
+    l_reg_valor_vehiculo.val_sub_modelo_8   := trn_k_ptd.CERO                   ;
+    l_reg_valor_vehiculo.val_sub_modelo_9   := trn_k_ptd.CERO                   ;
+    l_reg_valor_vehiculo.val_sub_modelo_10  := trn_k_ptd.CERO                   ;                           
+    --
+    trn_k_ptd.p_gen_final_traza(p_nom_prg    => 'em_k_ptd_rsk_mot'    ,
+                                p_nom_metodo => 'f_con_val_sub_modelo');
+    --
+    RETURN l_reg_valor_vehiculo;
+    --
+ END f_con_val_sub_modelo;  
+ --
+END em_k_ptd_rsk_mot;
+/

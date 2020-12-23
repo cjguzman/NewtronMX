@@ -1,0 +1,140 @@
+CREATE OR REPLACE PACKAGE BODY trp_mx_dl.em_k_ta999002
+AS
+ /* -------------------- DESCRIPCION --------------------
+ || Acceso a la tabla ta999002
+ || Procedimientos y funciones para el acceso de la tabla ta999002
+ ||
+ */ -----------------------------------------------------
+ --
+ /* -------------------- VERSION = 1.00 -------------------- */
+ --
+ /* -------------------- MODIFICACIONES -----------------
+ || 2020/11/04 - JALUIS2 - v 1.00
+ || Creacion del Package
+ */ -----------------------------------------------------
+ --
+ /* --------------------------------------------------
+ || Aqui comienza la declaracion de variables GLOBALES
+ */ --------------------------------------------------
+ --
+ g_existe BOOLEAN := FALSE;
+ --
+ /* ---------------------------------------------------
+ || Aqui comienza la declaracion de constantes GLOBALES
+ */ ---------------------------------------------------
+ --
+ g_k_ini_corchete CONSTANT VARCHAR2(2) := ' [';
+ g_k_fin_corchete CONSTANT VARCHAR2(1) := ']';
+ --
+ /* -------------------------------------------
+ || Definicion de Globales Privadas al Package
+ */ -------------------------------------------
+ --
+ -- ------------------------------------------------------------
+ --
+ /* ----------------------------------------------------
+ || Aqui comienza la declaracion de subprogramas LOCALES
+ */ ----------------------------------------------------
+ --
+ -- ------------------------------------------------------------
+ --
+ /**
+ || Comprueba que se haya leido informacion
+ */
+ PROCEDURE pp_comprueba_error
+ IS
+    l_t_valores         tron2000.trn_k_ptd.t_t_valores;
+ BEGIN
+    --
+    IF NOT g_existe
+    THEN
+       --
+       l_t_valores(1) := g_k_ini_corchete || 'PK ta999002' || g_k_fin_corchete;
+       --
+       tron2000.trn_k_ptd.p_gen_error(p_cod_idioma  => tron2000.trn_k_ptd.f_dev_cod_idioma,
+                                      p_cod_mensaje => 20001                              ,
+                                      p_t_valores   => l_t_valores                        ,
+                                      p_pre_mensaje => tron2000.trn_k_ptd.NULO            ,
+                                      p_pos_mensaje => '[PRODUCTO]'                       ); 
+       --
+    END IF;
+    --
+ END pp_comprueba_error;
+ --
+ /* -------------------------------------------
+ || Procedimientos Privados
+ */ -------------------------------------------
+ --
+ --
+ /* --------------------------------------------------------
+ || Aqui comienza la declaracion de subprogramas del PACKAGE
+ */ --------------------------------------------------------
+ --
+ -- ------------------------------------------------------------
+ --
+ /* -------------------------------------------
+ || Procedimientos Publicos
+ */ -------------------------------------------
+ --
+ /**
+ || Lee un registro por PK y recupera valores vigentes de lo
+ || particular a lo generico
+ */
+ FUNCTION f_lee_vigente(
+                        p_cod_cia          ta999002.cod_cia         %TYPE,
+                        p_cod_producto     ta999002.cod_producto    %TYPE,
+                        p_fec_validez      ta999002.fec_validez     %TYPE)
+             RETURN ta999002%ROWTYPE
+ IS
+    --
+    e_mca_inh           EXCEPTION;
+    l_t_valores         tron2000.trn_k_ptd.t_t_valores;
+    l_reg               ta999002%ROWTYPE              ;
+    --
+    CURSOR cl_ta999002
+    IS
+       --
+       SELECT a.*
+         FROM ta999002 a
+        WHERE a.cod_cia          =   p_cod_cia
+          AND a.cod_producto     =   p_cod_producto
+          AND a.fec_validez      =  ( SELECT MAX(fec_validez)
+                                        FROM ta999002
+                                       WHERE cod_cia          = a.cod_cia
+                                         AND cod_producto     = a.cod_producto
+                                         AND fec_validez     <= p_fec_validez
+                                     )
+        ;
+    --
+ BEGIN
+    --
+    OPEN        cl_ta999002;
+    FETCH       cl_ta999002 INTO l_reg;
+    g_existe := cl_ta999002 %FOUND;
+    CLOSE       cl_ta999002;
+    --
+    pp_comprueba_error;
+    --
+    IF l_reg.mca_inh = tron2000.trn_k_ptd.SI
+    THEN
+       --
+       RAISE e_mca_inh;
+       --
+    END IF;
+    --
+    RETURN l_reg;
+    --
+ EXCEPTION
+    WHEN e_mca_inh
+    THEN
+       --
+       tron2000.trn_k_ptd.p_gen_error(p_cod_idioma  => tron2000.trn_k_ptd.f_dev_cod_idioma,
+                                      p_cod_mensaje => 20020                              ,
+                                      p_t_valores   => l_t_valores                        ,
+                                      p_pre_mensaje => tron2000.trn_k_ptd.NULO            ,
+                                      p_pos_mensaje => '[PRODUCTO]'                       );
+       --
+ END f_lee_vigente;
+ --
+END em_k_ta999002;
+/

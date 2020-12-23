@@ -1,0 +1,146 @@
+CREATE OR REPLACE PACKAGE BODY trp_mx_dl.em_k_ta999005
+AS
+ /* -------------------- DESCRIPCION --------------------
+ || Acceso a la tabla ta999005
+ || Procedimientos y funciones para el acceso de la tabla ta999005
+ ||
+ */ -----------------------------------------------------
+ --
+ /* -------------------- VERSION = 1.00 -------------------- */
+ --
+ /* -------------------- MODIFICACIONES -----------------
+ || 2020/11/05 - JALUIS2 - v 1.00
+ || Creacion del Package
+ */ -----------------------------------------------------
+ --
+ /* --------------------------------------------------
+ || Aqui comienza la declaracion de variables GLOBALES
+ */ --------------------------------------------------
+ --
+ g_existe BOOLEAN := FALSE;
+ --
+ /* ---------------------------------------------------
+ || Aqui comienza la declaracion de constantes GLOBALES
+ */ ---------------------------------------------------
+ --
+ g_k_ini_corchete CONSTANT VARCHAR2(2) := ' [';
+ g_k_fin_corchete CONSTANT VARCHAR2(1) := ']';
+ --
+ /* -------------------------------------------
+ || Definicion de Globales Privadas al Package
+ */ -------------------------------------------
+ --
+ -- ------------------------------------------------------------
+ --
+ /* ----------------------------------------------------
+ || Aqui comienza la declaracion de subprogramas LOCALES
+ */ ----------------------------------------------------
+ --
+ -- ------------------------------------------------------------
+ --
+ /**
+ || Comprueba que se haya leido informacion
+ */
+ PROCEDURE pp_comprueba_error
+ IS
+    l_t_valores         tron2000.trn_k_ptd.t_t_valores;
+ BEGIN
+    --
+    IF NOT g_existe
+    THEN
+       --
+       l_t_valores(1) := g_k_ini_corchete || 'PK ta999005' || g_k_fin_corchete;
+       --
+       tron2000.trn_k_ptd.p_gen_error(p_cod_idioma  => tron2000.trn_k_ptd.f_dev_cod_idioma,
+                                      p_cod_mensaje => 20001                              ,
+                                      p_t_valores   => l_t_valores                        ,
+                                      p_pre_mensaje => tron2000.trn_k_ptd.NULO            ,
+                                      p_pos_mensaje => '[AMBITO CIRCULACION]'             ); 
+       --
+    END IF;
+    --
+ END pp_comprueba_error;
+ --
+ /* -------------------------------------------
+ || Procedimientos Privados
+ */ -------------------------------------------
+ --
+ --
+ /* --------------------------------------------------------
+ || Aqui comienza la declaracion de subprogramas del PACKAGE
+ */ --------------------------------------------------------
+ --
+ -- ------------------------------------------------------------
+ --
+ /* -------------------------------------------
+ || Procedimientos Publicos
+ */ -------------------------------------------
+ --
+ /**
+ || Lee un registro por PK y recupera valores vigentes de lo
+ || particular a lo generico
+ */
+ FUNCTION f_lee_vigente(
+                        p_cod_cia               ta999005.cod_cia            %TYPE,
+                        p_cod_ramo              ta999005.cod_ramo           %TYPE,
+                        p_cod_producto          ta999005.cod_producto       %TYPE,
+                        p_cod_amb_circulacion   ta999005.cod_amb_circulacion%TYPE,
+                        p_fec_validez           ta999005.fec_validez        %TYPE)
+             RETURN ta999005%ROWTYPE
+ IS
+    --
+    e_mca_inh           EXCEPTION                     ;
+    l_t_valores         tron2000.trn_k_ptd.t_t_valores;
+    l_reg               ta999005%ROWTYPE              ;
+    --
+    CURSOR cl_ta999005
+    IS
+       --
+       SELECT a.*
+         FROM ta999005 a
+        WHERE a.cod_cia             =   p_cod_cia
+          AND a.cod_ramo            IN  (p_cod_ramo, tron2000.em_k_ptd_gni.COD_RAMO_GEN)
+          AND a.cod_producto        =   p_cod_producto
+          AND a.cod_amb_circulacion =   p_cod_amb_circulacion
+          AND a.fec_validez         =  ( SELECT MAX(fec_validez)
+                                           FROM ta999005  b
+                                          WHERE b.cod_cia               =  a.cod_cia
+                                            AND b.cod_ramo              =  a.cod_ramo  
+                                            AND b.cod_producto          =  a.cod_producto  
+                                            AND b.cod_amb_circulacion   =  a.cod_amb_circulacion  
+                                            AND fec_validez            <= p_fec_validez  
+                                         )
+        ORDER BY a.cod_ramo;
+    --
+ BEGIN
+    --
+    OPEN        cl_ta999005           ;
+    FETCH       cl_ta999005 INTO l_reg;
+    g_existe := cl_ta999005 %FOUND    ;
+    CLOSE       cl_ta999005           ;
+    --
+    pp_comprueba_error;
+    --
+    IF l_reg.mca_inh = tron2000.trn_k_ptd.SI
+    THEN
+       --
+       RAISE e_mca_inh;
+       --
+    END IF;
+    --
+    RETURN l_reg;
+    --
+ EXCEPTION
+    WHEN e_mca_inh
+    THEN
+       --
+       tron2000.trn_k_ptd.p_gen_error(p_cod_idioma  => tron2000.trn_k_ptd.f_dev_cod_idioma,
+                                      p_cod_mensaje => 20020                              ,
+                                      p_t_valores   => l_t_valores                        ,
+                                      p_pre_mensaje => tron2000.trn_k_ptd.NULO            ,
+                                      p_pos_mensaje => '[AMBITO CIRCULACION]'             );
+       --
+ END f_lee_vigente;
+ --
+END em_k_ta999005;
+/

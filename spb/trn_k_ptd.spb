@@ -1,0 +1,1946 @@
+CREATE OR REPLACE PACKAGE BODY tron2000.trn_k_ptd AS
+ --
+ /* -------------------- VERSION = 1.04 -------------------- */
+ --
+ /* -------------------- MODIFICACIONES --------------------
+ || 2020/11/23 - hsolive - 1.04
+ ||
+ || Inclusión de control de errores en los metodos de asignacion
+ || de las globales ptd_val
+ */ --------------------------------------------------------
+ --
+ /* --------------------------------------------------
+ || Aqui comienza la declaracion de variables GLOBALES
+ */ --------------------------------------------------
+ --
+ g_trazas_habilitada      BOOLEAN; -- Indica si la generacion de trazas esta habilitada
+ g_idn_trazas             t_trn_trn_r_dbg.dbg_idn%TYPE;-- Contiene el idn corriente para generar trazas
+ g_num_secu_trazas        t_trn_trn_r_dbg.dbg_sqn%TYPE;-- Contiene el secuencial para generar trazas
+ g_nivel_indice_trazas    t_trn_trn_r_dbg.ind_lvl%TYPE; -- Contiene el nivel de indentacion corriente para generar trazas
+ --
+ --
+ /* ---------------------------------------------------
+ || Aqui comienza la declaracion de constantes GLOBALES
+ */ ---------------------------------------------------
+ --
+ g_k_coma  CONSTANT VARCHAR2(1) := ',';
+ g_k_nulo  CONSTANT VARCHAR2(1) := NULL;
+ g_k_fmt_f CONSTANT VARCHAR2(8) := 'ddmmyyyy';
+ --
+ --constantes para las trazas
+   g_k_mxm_stc_chr              CONSTANT t_trn_trn_r_dbg.dbg_sqn     %TYPE := 1000;
+   g_k_inicio_traza             CONSTANT t_trn_trn_r_dbg.dbg_bgn_end %TYPE := chr(ascii('B'));
+   g_k_blanco                   CONSTANT t_trn_trn_r_dbg.dbg_bgn_end %TYPE := chr(ascii(' '));
+   g_k_final_traza              CONSTANT t_trn_trn_r_dbg.dbg_bgn_end %TYPE := chr(ascii('T'));
+   g_k_punto                    CONSTANT t_trn_trn_r_dbg.dbg_bgn_end %TYPE := chr(ascii('.'));--[]
+   g_k_usc                      CONSTANT t_trn_trn_r_dbg.dbg_bgn_end %TYPE := chr(ascii('_'));--[]
+   g_k_tip_traza_metodo         CONSTANT t_trn_trn_r_dbg.mbr_typ     %TYPE := 'MTH';
+   g_k_tip_traza_variable       CONSTANT t_trn_trn_r_dbg.mbr_typ     %TYPE := 'VRB';
+   g_k_tip_traza_parametro      CONSTANT t_trn_trn_r_dbg.mbr_typ     %TYPE := 'PRM';
+   g_k_tip_traza_retorno        CONSTANT t_trn_trn_r_dbg.mbr_typ     %TYPE := 'RTR';
+   g_k_tip_traza_error          CONSTANT t_trn_trn_r_dbg.mbr_typ     %TYPE := 'ERR';
+   g_k_tip_traza_comentario     CONSTANT t_trn_trn_r_dbg.mbr_typ     %TYPE := 'CMT';
+ --
+ /* ----------------------------------------------------
+ || Aqui comienza la declaracion de subprogramas LOCALES
+ */ ----------------------------------------------------
+ --
+ /* -----------------------------------------------------
+ || pp_asigna:
+ ||
+ || Llama a trn_k_global.asigna
+ */ -----------------------------------------------------
+ --
+ PROCEDURE pp_asigna(p_nom_global VARCHAR2,
+                     p_val_global VARCHAR2) IS
+ BEGIN
+  --
+  trn_k_global.asigna(p_nom_global,p_val_global);
+  --
+ END pp_asigna;
+ --
+ /* -----------------------------------------------------
+ || pp_asigna:
+ ||
+ || Llama a trn_k_global.asigna
+ */ -----------------------------------------------------
+ --
+ PROCEDURE pp_asigna(p_nom_global VARCHAR2,
+                     p_val_global NUMBER  ) IS
+ BEGIN
+  --
+  trn_k_global.asigna(p_nom_global,TO_CHAR(p_val_global));
+  --
+ END pp_asigna;
+ --
+ /* -----------------------------------------------------
+ || pp_asigna:
+ ||
+ || Llama a trn_k_global.asigna
+ */ -----------------------------------------------------
+ --
+ PROCEDURE pp_asigna(p_nom_global VARCHAR2,
+                     p_val_global DATE    ) IS
+ BEGIN
+  --
+  trn_k_global.asigna(p_nom_global,TO_CHAR(p_val_global,g_k_fmt_f));
+  --
+ END pp_asigna;
+ --
+  /* -----------------------------------------------------
+   || pp_inserta_traza :
+   ||
+   || procedimiento privado
+   || inserta
+   ||
+   || Inserta una traza en la tabla t_trn_trn_r_dbg:
+   ||
+   */ -----------------------------------------------------
+   --
+   PROCEDURE pp_inserta_traza(p_idn_traza           IN t_trn_trn_r_dbg.dbg_idn%TYPE,
+                              p_num_secu_traza      IN t_trn_trn_r_dbg.dbg_sqn%TYPE,
+                              p_fec_hora_traza_imv  IN t_trn_trn_r_dbg.tim_inv%TYPE,
+                              p_ini_fin_traza       IN t_trn_trn_r_dbg.dbg_bgn_end%TYPE,
+                              p_nivel_indice_trazas IN t_trn_trn_r_dbg.ind_lvl%TYPE,
+                              p_nom_prg             IN t_trn_trn_r_dbg.pgm_nam%TYPE,
+                              p_tip_traza           IN t_trn_trn_r_dbg.mbr_typ%TYPE,
+                              p_nom_traza           IN t_trn_trn_r_dbg.mbr_nam%TYPE,
+                              p_val_traza           IN t_trn_trn_r_dbg.mbr_val%TYPE)
+   IS
+      --
+      PRAGMA AUTONOMOUS_TRANSACTION;
+      --
+      lv_inr     BOOLEAN   := FALSE;
+      lv_tim_imv TIMESTAMP := p_fec_hora_traza_imv;
+      --
+   BEGIN
+      -- Se incluye este bucle, ya que se estaban dando casos de clave duplicada
+      WHILE NOT lv_inr
+      LOOP
+         --
+         BEGIN
+            --
+            INSERT INTO t_trn_trn_r_dbg
+              (dbg_idn,
+               dbg_sqn,
+               tim_inv,
+               dbg_bgn_end,
+               ind_lvl,
+               pgm_nam,
+               mbr_typ,
+               mbr_nam,
+               mbr_val,
+               dbg_stc)
+            VALUES
+              (p_idn_traza,
+               p_num_secu_traza,
+               lv_tim_imv,
+               p_ini_fin_traza,
+               p_nivel_indice_trazas,
+               p_nom_prg,
+               p_tip_traza,
+               substr(p_nom_traza,1,30),
+               substr(p_val_traza, 1, g_k_mxm_stc_chr),
+               substr(dbms_utility.format_call_stack, 1, g_k_mxm_stc_chr));
+            --
+            lv_inr := TRUE;
+            --
+         EXCEPTION
+            WHEN dup_val_on_index THEN
+               --
+               lv_tim_imv := current_timestamp;
+               --
+         END;
+         --
+      END LOOP;
+      --
+      g_num_secu_trazas := g_num_secu_trazas + 1;
+      --
+      COMMIT;
+      --
+   END pp_inserta_traza;
+   --
+   --
+ /* -----------------------------------------------------
+ || fp_devuelve_c:
+ ||
+ || Llama a trn_k_global.devuelve y retorna como VARCHAR2
+ */ -----------------------------------------------------
+ --
+ FUNCTION fp_devuelve_c(p_nom_global VARCHAR2)
+          RETURN VARCHAR2 IS
+ BEGIN
+  --
+  RETURN trn_k_global.devuelve(p_nom_global);
+  --
+ END fp_devuelve_c;
+ --
+ /* -----------------------------------------------------
+ || fp_devuelve_n:
+ ||
+ || Llama a trn_k_global.devuelve y retorna como NUMBER
+ */ -----------------------------------------------------
+ --
+ FUNCTION fp_devuelve_n(p_nom_global VARCHAR2)
+          RETURN NUMBER IS
+ BEGIN
+  --
+  RETURN TO_NUMBER(trn_k_global.devuelve(p_nom_global));
+  --
+ END fp_devuelve_n;
+ --
+ /* -----------------------------------------------------
+ || fp_devuelve_f:
+ ||
+ || Llama a trn_k_global.devuelve y retorna como DATE
+ */ -----------------------------------------------------
+ --
+ FUNCTION fp_devuelve_f(p_nom_global VARCHAR2)
+          RETURN DATE IS
+ BEGIN
+  --
+  RETURN TO_DATE(trn_k_global.devuelve(p_nom_global),g_k_fmt_f);
+  --
+ END fp_devuelve_f;
+ --
+ /* -----------------------------------------------------
+ || fp_in:
+ ||
+ || Simula la funcion IN(...
+ */ -----------------------------------------------------
+ --
+ FUNCTION fp_en(p_valor_campo VARCHAR2,
+                p_valor_en    VARCHAR2)
+          RETURN BOOLEAN IS
+ BEGIN
+  --
+  RETURN (INSTR(p_valor_en    || g_k_coma,
+                p_valor_campo || g_k_coma) != 0
+         );
+  --
+ END fp_en;
+ --
+ /* -----------------------------------------------------
+ || fp_dev_traza_habilitada :
+ ||
+ || Devuelve un boolean indicando si las trazas estan
+ || habilitadas
+ */ -----------------------------------------------------
+ --
+ FUNCTION fp_dev_traza_habilitada
+    RETURN BOOLEAN
+ IS
+ BEGIN
+    --
+    RETURN g_trazas_habilitada;
+    --
+ END fp_dev_traza_habilitada;
+ --
+ --
+ /* -----------------------------------------------------
+ || fp_dev_traza_habilitada :
+ ||
+ || Devuelve el booleano en formato texto
+ */ -----------------------------------------------------
+ -- 
+ FUNCTION fp_dev_char_from_boolean (p_booleano BOOLEAN)
+    RETURN t_trn_trn_r_dbg.mbr_nam%TYPE
+ IS
+ --
+ l_retorno t_trn_trn_r_dbg.mbr_nam%TYPE;
+ --
+ BEGIN
+   IF p_booleano = TRUE
+    THEN
+       --
+       l_retorno := 'TRUE';
+       --
+    ELSIF p_booleano = FALSE
+    THEN
+       --
+       l_retorno := 'FALSE';
+       --
+    ELSE
+       --
+       l_retorno := 'NULL';
+       --
+    END IF;
+    --
+    RETURN l_retorno;
+    --
+ END fp_dev_char_from_boolean;
+ --
+ --
+ /* -----------------------------------------------------
+ || pp_raise :
+ ||
+ || Genera RAISE_APPLICATION_ERROR
+ */ -----------------------------------------------------
+ --
+ PROCEDURE pp_raise(p_cod_mensaje g1010020.cod_mensaje%TYPE,
+                    p_txt_mensaje VARCHAR2                 ) IS
+ BEGIN
+  --
+  IF p_cod_mensaje BETWEEN 20000
+                       AND 20999
+   THEN
+    --
+    RAISE_APPLICATION_ERROR(-p_cod_mensaje,
+                            p_txt_mensaje );
+    --
+   ELSE
+    --
+    RAISE_APPLICATION_ERROR(-20000       ,
+                            p_txt_mensaje);
+    --
+  END IF;
+  --
+ END pp_raise;
+ --
+ /* --------------------------------------------------------
+ || Aqui comienza la declaracion de subprogramas del PACKAGE
+ */ --------------------------------------------------------
+ --
+ --
+ /* -----------------------------------------------------
+ || f_dev_cod_usr:
+ ||
+ || Devuelve el usuario
+ */ -----------------------------------------------------
+ --
+ FUNCTION f_dev_cod_usr
+          RETURN g1002700.cod_usr%TYPE IS
+ BEGIN
+  --
+  RETURN fp_devuelve_c('cod_usr');
+  --
+ END f_dev_cod_usr;
+ --
+ /* -----------------------------------------------------
+ || f_dev_cod_idioma:
+ ||
+ || Devuelve el idioma
+ */ -----------------------------------------------------
+ --
+ FUNCTION f_dev_cod_idioma
+          RETURN g1010010.cod_idioma%TYPE IS
+ BEGIN
+  --
+  RETURN trn_k_global.cod_idioma;
+  --
+ END f_dev_cod_idioma;
+ --
+ /* -----------------------------------------------------
+ || f_dev_mspool_dir:
+ ||
+ || Devuelve el directorio de mspool
+ */ -----------------------------------------------------
+ --
+ FUNCTION f_dev_mspool_dir
+          RETURN g0000000.val_param%TYPE IS
+ BEGIN
+  --
+  RETURN fp_devuelve_c('mspool_dir');
+  --
+ END f_dev_mspool_dir;
+ --
+ --
+ /* -----------------------------------------------------
+ || f_dev_mspool_dir_real:
+ ||
+ || Devuelve el directorio real mspool
+ */ -----------------------------------------------------
+ --
+ FUNCTION f_dev_mspool_dir_real
+          RETURN g0000000.val_param%TYPE IS
+ BEGIN
+  --
+  RETURN fp_devuelve_c('mspool_dir_real');
+  --
+ END f_dev_mspool_dir_real;
+ --
+ /* -----------------------------------------------------
+ || f_dev_sql_dir:
+ ||
+ || Devuelve el directorio sql
+ */ -----------------------------------------------------
+ --
+ FUNCTION f_dev_sql_dir
+          RETURN g0000000.val_param%TYPE IS
+ BEGIN
+  --
+  RETURN fp_devuelve_c('sql_dir');
+  --     
+ END f_dev_sql_dir;
+ --
+ /* -----------------------------------------------------
+ || f_dev_sql_dir_real:
+ ||
+ || Devuelve el directorio sql real
+ */ -----------------------------------------------------
+ --
+ FUNCTION f_dev_sql_dir_real
+          RETURN g0000000.val_param%TYPE IS
+ BEGIN
+  --
+  RETURN fp_devuelve_c('sql_dir_real');
+  --
+ END f_dev_sql_dir_real;
+ --
+  /* -------------------------------------------------------
+ || f_dev_identificador_traza :
+ ||
+ || Devuelve un identificador para ser utilizado en la tabla de debug (trazas)
+ */ -------------------------------------------------------
+ --
+ FUNCTION f_dev_identificador_traza (p_identificador IN t_trn_trn_r_dbg.mbr_nam%TYPE) 
+   RETURN t_trn_trn_r_dbg.dbg_idn%TYPE
+ IS
+ BEGIN
+   --
+   RETURN p_identificador||sys_guid();
+   --
+ END;
+ --
+ --
+ /* -------------------------------------------------------
+ || f_dev_ptd_val_01 :
+ ||
+ || Devuelve el valor almacenado en la global ptd_val_01
+ */ -------------------------------------------------------
+ --
+ FUNCTION f_dev_ptd_val_01 
+          RETURN x2000020.val_campo%TYPE IS
+ BEGIN
+    --
+    BEGIN
+       --  
+       RETURN fp_devuelve_c('ptd_val_01');
+       --
+    EXCEPTION
+       WHEN TRN.e_no_existe
+       THEN
+          --
+          RETURN trn.NULO;
+          --
+    END;
+    --
+ END f_dev_ptd_val_01;
+ --
+ --
+ /* -------------------------------------------------------
+ || f_dev_ptd_val_02 :
+ ||
+ || Devuelve el valor almacenado en la global ptd_val_02
+ */ -------------------------------------------------------
+ --
+ FUNCTION f_dev_ptd_val_02 
+          RETURN x2000020.val_campo%TYPE IS
+ BEGIN
+    --
+    BEGIN
+       --  
+       RETURN fp_devuelve_c('ptd_val_02');
+       --
+    EXCEPTION
+       WHEN TRN.e_no_existe
+       THEN
+          --
+          RETURN trn.NULO;
+          --
+    END;
+    --
+ END f_dev_ptd_val_02;
+ --
+ --
+ /* -------------------------------------------------------
+ || f_dev_ptd_val_03 :
+ ||
+ || Devuelve el valor almacenado en la global ptd_val_03
+ */ -------------------------------------------------------
+ --
+ FUNCTION f_dev_ptd_val_03 
+          RETURN x2000020.val_campo%TYPE IS
+ BEGIN
+    --
+    BEGIN
+       --  
+       RETURN fp_devuelve_c('ptd_val_03');
+       --
+    EXCEPTION
+       WHEN TRN.e_no_existe
+       THEN
+          --
+          RETURN trn.NULO;
+          --
+    END;
+    --
+ END f_dev_ptd_val_03;
+ --
+ --
+ /* -------------------------------------------------------
+ || f_dev_ptd_val_04 :
+ ||
+ || Devuelve el valor almacenado en la global ptd_val_04
+ */ -------------------------------------------------------
+ --
+ FUNCTION f_dev_ptd_val_04 
+          RETURN x2000020.val_campo%TYPE IS
+ BEGIN
+    --
+    BEGIN
+       --  
+       RETURN fp_devuelve_c('ptd_val_04');
+       --
+    EXCEPTION
+       WHEN TRN.e_no_existe
+       THEN
+          --
+          RETURN trn.NULO;
+          --
+    END;
+    --
+ END f_dev_ptd_val_04;
+ --
+ --
+ /* -------------------------------------------------------
+ || f_dev_ptd_val_05 :
+ ||
+ || Devuelve el valor almacenado en la global ptd_val_05
+ */ -------------------------------------------------------
+ --  
+ FUNCTION f_dev_ptd_val_05 
+          RETURN x2000020.val_campo%TYPE IS
+ BEGIN
+    --
+    BEGIN
+       --  
+       RETURN fp_devuelve_c('ptd_val_05');
+       --
+    EXCEPTION
+       WHEN TRN.e_no_existe
+       THEN
+          --
+          RETURN trn.NULO;
+          --
+    END;
+    --
+ END f_dev_ptd_val_05;
+ --
+ --
+ /* -------------------------------------------------------
+ || f_dev_ptd_val_06 :
+ ||
+ || Devuelve el valor almacenado en la global ptd_val_06
+ */ -------------------------------------------------------
+ --
+ FUNCTION f_dev_ptd_val_06 
+          RETURN x2000020.val_campo%TYPE IS
+ BEGIN
+    --
+    BEGIN
+       --  
+       RETURN fp_devuelve_c('ptd_val_06');
+       --
+    EXCEPTION
+       WHEN TRN.e_no_existe
+       THEN
+          --
+          RETURN trn.NULO;
+          --
+    END;
+    --
+ END f_dev_ptd_val_06;
+ --
+ --
+ /* -------------------------------------------------------
+ || f_dev_ptd_val_07 :
+ ||
+ || Devuelve el valor almacenado en la global ptd_val_07
+ */ -------------------------------------------------------
+ --
+ FUNCTION f_dev_ptd_val_07 
+          RETURN x2000020.val_campo%TYPE IS
+ BEGIN
+    --
+    BEGIN
+       --  
+       RETURN fp_devuelve_c('ptd_val_07');
+       --
+    EXCEPTION
+       WHEN TRN.e_no_existe
+       THEN
+          --
+          RETURN trn.NULO;
+          --
+    END;
+    --
+ END f_dev_ptd_val_07;
+ --
+ --
+ /* -------------------------------------------------------
+ || f_dev_ptd_val_08 :
+ ||
+ || Devuelve el valor almacenado en la global ptd_val_08
+ */ -------------------------------------------------------
+ --
+ FUNCTION f_dev_ptd_val_08 
+          RETURN x2000020.val_campo%TYPE IS
+ BEGIN
+    --
+    BEGIN
+       --  
+       RETURN fp_devuelve_c('ptd_val_08');
+       --
+    EXCEPTION
+       WHEN TRN.e_no_existe
+       THEN
+          --
+          RETURN trn.NULO;
+          --
+    END;
+    --
+ END f_dev_ptd_val_08;
+ --
+ --
+ /* -------------------------------------------------------
+ || f_dev_ptd_val_09 :
+ ||
+ || Devuelve el valor almacenado en la global ptd_val_09
+ */ -------------------------------------------------------
+ --
+ FUNCTION f_dev_ptd_val_09 
+          RETURN x2000020.val_campo%TYPE IS
+ BEGIN
+    --
+    BEGIN
+       --  
+       RETURN fp_devuelve_c('ptd_val_09');
+       --
+    EXCEPTION
+       WHEN TRN.e_no_existe
+       THEN
+          --
+          RETURN trn.NULO;
+          --
+    END;
+    --
+ END f_dev_ptd_val_09;
+ --
+ --
+ /* -------------------------------------------------------
+ || f_dev_ptd_val_10 :
+ ||
+ || Devuelve el valor almacenado en la global ptd_val_10
+ */ -------------------------------------------------------
+ --
+ FUNCTION f_dev_ptd_val_10 
+          RETURN x2000020.val_campo%TYPE IS
+ BEGIN
+    --
+    BEGIN
+       --  
+       RETURN fp_devuelve_c('ptd_val_10');
+       --
+    EXCEPTION
+       WHEN TRN.e_no_existe
+       THEN
+          --
+          RETURN trn.NULO;
+          --
+    END;
+    --
+ END f_dev_ptd_val_10;
+ --
+ --
+ /* -----------------------------------------------------
+ || p_asg_ptd_val_01:
+ ||
+ || Asignar el valor a la global ptd_val_01
+ */ ----------------------------------------------------- 
+ --
+ PROCEDURE p_asg_ptd_val_01(p_ptd_val_01 IN x2000020.val_campo%TYPE)
+ IS
+ BEGIN
+    --
+    pp_asigna('ptd_val_01', p_ptd_val_01);
+    --
+ END p_asg_ptd_val_01;
+ --
+ --
+ /* -----------------------------------------------------
+ || p_asg_ptd_val_02:
+ ||
+ || Asignar el valor a la global ptd_val_02
+ */ ----------------------------------------------------- 
+ --
+ PROCEDURE p_asg_ptd_val_02(p_ptd_val_02 IN x2000020.val_campo%TYPE)
+ IS
+ BEGIN
+    --
+    pp_asigna('ptd_val_02', p_ptd_val_02);
+    --
+ END p_asg_ptd_val_02;
+ --
+ --
+ /* -----------------------------------------------------
+ || p_asg_ptd_val_03:
+ ||
+ || Asignar el valor a la global ptd_val_03
+ */ ----------------------------------------------------- 
+ --
+ PROCEDURE p_asg_ptd_val_03(p_ptd_val_03 IN x2000020.val_campo%TYPE)
+ IS
+ BEGIN
+    --
+    pp_asigna('ptd_val_03', p_ptd_val_03);
+    --
+ END p_asg_ptd_val_03;
+ --
+ --
+ /* -----------------------------------------------------
+ || p_asg_ptd_val_04:
+ ||
+ || Asignar el valor a la global ptd_val_04
+ */ ----------------------------------------------------- 
+ --
+ PROCEDURE p_asg_ptd_val_04(p_ptd_val_04 IN x2000020.val_campo%TYPE)
+ IS
+ BEGIN
+    --
+    pp_asigna('ptd_val_04', p_ptd_val_04);
+    --
+ END p_asg_ptd_val_04;
+ --
+ --
+ /* -----------------------------------------------------
+ || p_asg_ptd_val_05:
+ ||
+ || Asignar el valor a la global ptd_val_05
+ */ ----------------------------------------------------- 
+ --
+ PROCEDURE p_asg_ptd_val_05(p_ptd_val_05 IN x2000020.val_campo%TYPE)
+ IS
+ BEGIN
+    --
+    pp_asigna('ptd_val_05', p_ptd_val_05);
+    --
+ END p_asg_ptd_val_05;
+ --
+ --
+ /* -----------------------------------------------------
+ || p_asg_ptd_val_06:
+ ||
+ || Asignar el valor a la global ptd_val_06
+ */ ----------------------------------------------------- 
+ --
+ PROCEDURE p_asg_ptd_val_06(p_ptd_val_06 IN x2000020.val_campo%TYPE)
+ IS
+ BEGIN
+    --
+    pp_asigna('ptd_val_06', p_ptd_val_06);
+    --
+ END p_asg_ptd_val_06;
+ --
+ --
+ /* -----------------------------------------------------
+ || p_asg_ptd_val_07:
+ ||
+ || Asignar el valor a la global ptd_val_07
+ */ ----------------------------------------------------- 
+ --
+ PROCEDURE p_asg_ptd_val_07(p_ptd_val_07 IN x2000020.val_campo%TYPE)
+ IS
+ BEGIN
+    --
+    pp_asigna('ptd_val_07', p_ptd_val_07);
+    --
+ END p_asg_ptd_val_07;
+ --
+ --
+ /* -----------------------------------------------------
+ || p_asg_ptd_val_08:
+ ||
+ || Asignar el valor a la global ptd_val_08
+ */ ----------------------------------------------------- 
+ --
+ PROCEDURE p_asg_ptd_val_08(p_ptd_val_08 IN x2000020.val_campo%TYPE)
+ IS
+ BEGIN
+    --
+    pp_asigna('ptd_val_08', p_ptd_val_08);
+    --
+ END p_asg_ptd_val_08;
+ --
+ --
+ /* -----------------------------------------------------
+ || p_asg_ptd_val_09:
+ ||
+ || Asignar el valor a la global ptd_val_09
+ */ ----------------------------------------------------- 
+ --
+ PROCEDURE p_asg_ptd_val_09(p_ptd_val_09 IN x2000020.val_campo%TYPE)
+ IS
+ BEGIN
+    --
+    pp_asigna('ptd_val_09', p_ptd_val_09);
+    --
+ END p_asg_ptd_val_09;
+ --
+ --
+ /* -----------------------------------------------------
+ || p_asg_ptd_val_10:
+ ||
+ || Asignar el valor a la global ptd_val_10
+ */ ----------------------------------------------------- 
+ --
+ PROCEDURE p_asg_ptd_val_10(p_ptd_val_10 IN x2000020.val_campo%TYPE)
+ IS
+ BEGIN
+    --
+    pp_asigna('ptd_val_10', p_ptd_val_10);
+    --
+ END p_asg_ptd_val_10;
+ --
+ --
+ /* -----------------------------------------------------
+ || p_val_igual:
+ ||
+ || p_valor_campo debe ser igual a p_valor_min
+ */ -----------------------------------------------------
+ --
+ PROCEDURE p_val_igual(p_valor_campo VARCHAR2                ,
+                       p_valor_igual VARCHAR2                ,
+                       p_cod_idioma  g1010010.cod_idioma%TYPE) IS
+  --
+  l_t_valores ss_k_mensaje.t_t_valores;
+  --
+ BEGIN
+  --
+  IF p_valor_campo != p_valor_igual
+   THEN
+    --
+    l_t_valores(1) := p_valor_campo;
+    l_t_valores(2) := p_valor_igual;
+    --
+    p_gen_error(p_cod_idioma  => p_cod_idioma,
+                p_cod_mensaje => 99900014    ,
+                p_t_valores   => l_t_valores ,
+                p_pre_mensaje => g_k_nulo    ,
+                p_pos_mensaje => g_k_nulo    );
+    --
+  END IF;
+  --
+ END p_val_igual;
+ --
+ /* -----------------------------------------------------
+ || p_val_igual:
+ ||
+ || p_valor_campo debe ser igual a p_valor_min
+ */ -----------------------------------------------------
+ --
+ PROCEDURE p_val_igual(p_valor_campo NUMBER                  ,
+                       p_valor_igual NUMBER                  ,
+                       p_cod_idioma  g1010010.cod_idioma%TYPE) IS
+ BEGIN
+  --
+  p_val_igual(p_valor_campo => TO_CHAR(p_valor_campo),
+              p_valor_igual => TO_CHAR(p_valor_igual),
+              p_cod_idioma  => p_cod_idioma          );
+  --
+ END p_val_igual;
+ --
+ /* -----------------------------------------------------
+ || p_val_igual:
+ ||
+ || p_valor_campo debe ser igual a p_valor_min
+ */ -----------------------------------------------------
+ --
+ PROCEDURE p_val_igual(p_valor_campo DATE                    ,
+                       p_valor_igual DATE                    ,
+                       p_cod_idioma  g1010010.cod_idioma%TYPE) IS
+ BEGIN
+  --
+  p_val_igual(p_valor_campo => TO_CHAR(p_valor_campo,'DD-MON-YYYY HH24:MI:SS'),
+              p_valor_igual => TO_CHAR(p_valor_igual,'DD-MON-YYYY HH24:MI:SS'),
+              p_cod_idioma  => p_cod_idioma                                  );
+  --
+ END p_val_igual;
+ --
+ /* -----------------------------------------------------
+ || p_val_mayor:
+ ||
+ || p_valor_campo debe ser mayor a p_valor_min
+ */ -----------------------------------------------------
+ --
+ PROCEDURE p_val_mayor(p_valor_campo VARCHAR2                ,
+                       p_valor_min   VARCHAR2                ,
+                       p_cod_idioma  g1010010.cod_idioma%TYPE) IS
+  --
+  l_t_valores ss_k_mensaje.t_t_valores;
+  --
+ BEGIN
+  --
+  IF p_valor_campo <= p_valor_min
+   THEN
+    --
+    l_t_valores(1) := p_valor_campo;
+    l_t_valores(2) := p_valor_min;
+    --
+    p_gen_error(p_cod_idioma  => p_cod_idioma,
+                p_cod_mensaje => 99900015    ,
+                p_t_valores   => l_t_valores ,
+                p_pre_mensaje => g_k_nulo    ,
+                p_pos_mensaje => g_k_nulo    );
+    --
+  END IF;
+  --
+ END p_val_mayor;
+ --
+ /* -----------------------------------------------------
+ || p_val_mayor:
+ ||
+ || p_valor_campo debe ser mayor a p_valor_min
+ */ -----------------------------------------------------
+ --
+ PROCEDURE p_val_mayor(p_valor_campo NUMBER                  ,
+                       p_valor_min   NUMBER                  ,
+                       p_cod_idioma  g1010010.cod_idioma%TYPE) IS
+  --
+  l_t_valores ss_k_mensaje.t_t_valores;
+  --
+ BEGIN
+  --
+  IF p_valor_campo <= p_valor_min
+   THEN
+    --
+    l_t_valores(1) := p_valor_campo;
+    l_t_valores(2) := p_valor_min;
+    --
+    p_gen_error(p_cod_idioma  => p_cod_idioma,
+                p_cod_mensaje => 99900015    ,
+                p_t_valores   => l_t_valores ,
+                p_pre_mensaje => g_k_nulo    ,
+                p_pos_mensaje => g_k_nulo    );
+    --
+  END IF;
+  --
+ END p_val_mayor;
+ --
+ /* -----------------------------------------------------
+ || p_val_mayor:
+ ||
+ || p_valor_campo debe ser mayor a p_valor_min
+ */ -----------------------------------------------------
+ --
+ PROCEDURE p_val_mayor(p_valor_campo DATE                    ,
+                       p_valor_min   DATE                    ,
+                       p_cod_idioma  g1010010.cod_idioma%TYPE) IS
+  --
+  l_t_valores ss_k_mensaje.t_t_valores;
+  --
+ BEGIN
+  --
+  IF p_valor_campo <= p_valor_min
+   THEN
+    --
+    l_t_valores(1) := p_valor_campo;
+    l_t_valores(2) := p_valor_min;
+    --
+    p_gen_error(p_cod_idioma  => p_cod_idioma,
+                p_cod_mensaje => 99900015    ,
+                p_t_valores   => l_t_valores ,
+                p_pre_mensaje => g_k_nulo    ,
+                p_pos_mensaje => g_k_nulo    );
+    --
+  END IF;
+  --
+ END p_val_mayor;
+ --
+ /* -----------------------------------------------------
+ || p_val_mayor_igual:
+ ||
+ || p_valor_campo debe ser mayor o igual a p_valor_min
+ */ -----------------------------------------------------
+ --
+ PROCEDURE p_val_mayor_igual(p_valor_campo VARCHAR2                ,
+                             p_valor_min   VARCHAR2                ,
+                             p_cod_idioma  g1010010.cod_idioma%TYPE) IS
+  --
+  l_t_valores ss_k_mensaje.t_t_valores;
+  --
+ BEGIN
+  --
+  IF p_valor_campo < p_valor_min
+   THEN
+    --
+    l_t_valores(1) := p_valor_campo;
+    l_t_valores(2) := p_valor_min;
+    --
+    p_gen_error(p_cod_idioma  => p_cod_idioma,
+                p_cod_mensaje => 99900016    ,
+                p_t_valores   => l_t_valores ,
+                p_pre_mensaje => g_k_nulo    ,
+                p_pos_mensaje => g_k_nulo    );
+    --
+  END IF;
+  --
+ END p_val_mayor_igual;
+ --
+ /* -----------------------------------------------------
+ || p_val_mayor_igual:
+ ||
+ || p_valor_campo debe ser mayor o igual a p_valor_min
+ */ -----------------------------------------------------
+ --
+ PROCEDURE p_val_mayor_igual(p_valor_campo NUMBER                  ,
+                             p_valor_min   NUMBER                  ,
+                             p_cod_idioma  g1010010.cod_idioma%TYPE) IS
+  --
+  l_t_valores ss_k_mensaje.t_t_valores;
+  --
+ BEGIN
+  --
+  IF p_valor_campo < p_valor_min
+   THEN
+    --
+    l_t_valores(1) := p_valor_campo;
+    l_t_valores(2) := p_valor_min;
+    --
+    p_gen_error(p_cod_idioma  => p_cod_idioma,
+                p_cod_mensaje => 99900016    ,
+                p_t_valores   => l_t_valores ,
+                p_pre_mensaje => g_k_nulo    ,
+                p_pos_mensaje => g_k_nulo    );
+
+    --
+  END IF;
+  --
+ END p_val_mayor_igual;
+ --
+ /* -----------------------------------------------------
+ || p_val_mayor_igual:
+ ||
+ || p_valor_campo debe ser mayor o igual a p_valor_min
+ */ -----------------------------------------------------
+ --
+ PROCEDURE p_val_mayor_igual(p_valor_campo DATE                    ,
+                             p_valor_min   DATE                    ,
+                             p_cod_idioma  g1010010.cod_idioma%TYPE) IS
+  --
+  l_t_valores ss_k_mensaje.t_t_valores;
+  --
+ BEGIN
+  --
+  IF p_valor_campo < p_valor_min
+   THEN
+    --
+    l_t_valores(1) := p_valor_campo;
+    l_t_valores(2) := p_valor_min;
+    --
+    p_gen_error(p_cod_idioma  => p_cod_idioma,
+                p_cod_mensaje => 99900016    ,
+                p_t_valores   => l_t_valores ,
+                p_pre_mensaje => g_k_nulo    ,
+                p_pos_mensaje => g_k_nulo    );
+
+    --
+  END IF;
+  --
+ END p_val_mayor_igual;
+ --
+ /* -----------------------------------------------------
+ || p_val_menor:
+ ||
+ || p_valor_campo debe ser menor a p_valor_max
+ */ -----------------------------------------------------
+ --
+ PROCEDURE p_val_menor(p_valor_campo VARCHAR2                ,
+                       p_valor_max   VARCHAR2                ,
+                       p_cod_idioma  g1010010.cod_idioma%TYPE) IS
+  --
+  l_t_valores ss_k_mensaje.t_t_valores;
+  --
+ BEGIN
+  --
+  IF p_valor_campo >= p_valor_max
+   THEN
+    --
+    l_t_valores(1) := p_valor_campo;
+    l_t_valores(2) := p_valor_max;
+    --
+    p_gen_error(p_cod_idioma  => p_cod_idioma,
+                p_cod_mensaje => 99900017    ,
+                p_t_valores   => l_t_valores ,
+                p_pre_mensaje => g_k_nulo    ,
+                p_pos_mensaje => g_k_nulo    );
+    --
+  END IF;
+  --
+ END p_val_menor;
+ --
+ /* -----------------------------------------------------
+ || p_val_menor:
+ ||
+ || p_valor_campo debe ser menor a p_valor_max
+ */ -----------------------------------------------------
+ --
+ PROCEDURE p_val_menor(p_valor_campo NUMBER                  ,
+                       p_valor_max   NUMBER                  ,
+                       p_cod_idioma  g1010010.cod_idioma%TYPE) IS
+  --
+  l_t_valores ss_k_mensaje.t_t_valores;
+  --
+ BEGIN
+  --
+  IF p_valor_campo >= p_valor_max
+   THEN
+    --
+    l_t_valores(1) := p_valor_campo;
+    l_t_valores(2) := p_valor_max;
+    --
+    p_gen_error(p_cod_idioma  => p_cod_idioma,
+                p_cod_mensaje => 99900017    ,
+                p_t_valores   => l_t_valores ,
+                p_pre_mensaje => g_k_nulo    ,
+                p_pos_mensaje => g_k_nulo    );
+    --
+  END IF;
+  --
+ END p_val_menor;
+ --
+ /* -----------------------------------------------------
+ || p_val_menor:
+ ||
+ || p_valor_campo debe ser menor a p_valor_max
+ */ -----------------------------------------------------
+ --
+
+ PROCEDURE p_val_menor(p_valor_campo DATE                    ,
+                       p_valor_max   DATE                    ,
+                       p_cod_idioma  g1010010.cod_idioma%TYPE) IS
+  --
+  l_t_valores ss_k_mensaje.t_t_valores;
+  --
+ BEGIN
+  --
+  IF p_valor_campo >= p_valor_max
+   THEN
+    --
+    l_t_valores(1) := p_valor_campo;
+    l_t_valores(2) := p_valor_max;
+    --
+    p_gen_error(p_cod_idioma  => p_cod_idioma,
+                p_cod_mensaje => 99900017    ,
+                p_t_valores   => l_t_valores ,
+                p_pre_mensaje => g_k_nulo    ,
+                p_pos_mensaje => g_k_nulo    );
+    --
+  END IF;
+  --
+ END p_val_menor;
+ --
+ /* -----------------------------------------------------
+ || p_val_menor_igual:
+ ||
+ || p_valor_campo debe ser menor o igual a p_valor_max 
+ */ -----------------------------------------------------
+ --
+ PROCEDURE p_val_menor_igual(p_valor_campo VARCHAR2                ,
+                             p_valor_max   VARCHAR2                ,
+                             p_cod_idioma  g1010010.cod_idioma%TYPE) IS
+  --
+  l_t_valores ss_k_mensaje.t_t_valores;
+  --
+ BEGIN
+  --
+  IF p_valor_campo > p_valor_max
+   THEN
+    --
+    l_t_valores(1) := p_valor_campo;
+    l_t_valores(2) := p_valor_max;
+    --
+    p_gen_error(p_cod_idioma  => p_cod_idioma,
+                p_cod_mensaje => 99900018    ,
+                p_t_valores   => l_t_valores ,
+                p_pre_mensaje => g_k_nulo    ,
+                p_pos_mensaje => g_k_nulo    );
+    --
+  END IF;
+  --
+ END p_val_menor_igual;
+ --
+ /* -----------------------------------------------------
+ || p_val_menor_igual:
+ ||
+ || p_valor_campo debe ser menor o igual a p_valor_max 
+ */ -----------------------------------------------------
+ --
+ PROCEDURE p_val_menor_igual(p_valor_campo NUMBER                  ,
+                             p_valor_max   NUMBER                  ,
+                             p_cod_idioma  g1010010.cod_idioma%TYPE) IS
+  --
+  l_t_valores ss_k_mensaje.t_t_valores;
+  --
+ BEGIN
+  --
+  IF p_valor_campo > p_valor_max
+   THEN
+    --
+    l_t_valores(1) := p_valor_campo;
+    l_t_valores(2) := p_valor_max;
+    --
+    p_gen_error(p_cod_idioma  => p_cod_idioma,
+                p_cod_mensaje => 99900018    ,
+                p_t_valores   => l_t_valores ,
+                p_pre_mensaje => g_k_nulo    ,
+                p_pos_mensaje => g_k_nulo    );
+    --
+  END IF;
+  --
+ END p_val_menor_igual;
+ --
+ /* -----------------------------------------------------
+ || p_val_menor_igual:
+ ||
+ || p_valor_campo debe ser menor o igual a p_valor_max 
+ */ -----------------------------------------------------
+ --
+ PROCEDURE p_val_menor_igual(p_valor_campo DATE                    ,
+                             p_valor_max   DATE                    ,
+                             p_cod_idioma  g1010010.cod_idioma%TYPE) IS
+  --
+  l_t_valores ss_k_mensaje.t_t_valores;
+  --
+ BEGIN
+  --
+  IF p_valor_campo > p_valor_max
+   THEN
+    --
+    l_t_valores(1) := p_valor_campo;
+    l_t_valores(2) := p_valor_max;
+    --
+    p_gen_error(p_cod_idioma  => p_cod_idioma,
+                p_cod_mensaje => 99900018    ,
+                p_t_valores   => l_t_valores ,
+                p_pre_mensaje => g_k_nulo    ,
+                p_pos_mensaje => g_k_nulo    );
+    --
+  END IF;
+  --
+ END p_val_menor_igual;
+ --
+ /* -----------------------------------------------------
+ || p_val_en:
+ ||
+ || p_valor_campo debe encontrarse en p_valor_in.
+ ||
+ || Los valores deben ir separados por comas (,) y en
+ || ningun caso entre comillas. Es decir, si se quiere 
+ || comprobar que los valores sean: A, B o C, p_valor_in
+ || serÃ¿Â¡: 'A,B,C'
+ */ -----------------------------------------------------
+ --
+ PROCEDURE p_val_en(p_valor_campo VARCHAR2                ,
+                    p_valor_en    VARCHAR2                ,
+                    p_cod_idioma  g1010010.cod_idioma%TYPE) IS
+  --
+  l_t_valores ss_k_mensaje.t_t_valores;
+  --
+ BEGIN
+  --
+  IF NOT fp_en(p_valor_campo => p_valor_campo,
+               p_valor_en    => p_valor_en   )
+   THEN
+    --
+    l_t_valores(1) := p_valor_campo;
+    l_t_valores(2) := p_valor_en;
+    --
+    p_gen_error(p_cod_idioma  => p_cod_idioma,
+                p_cod_mensaje => 99900019    ,
+                p_t_valores   => l_t_valores ,
+                p_pre_mensaje => g_k_nulo    ,
+                p_pos_mensaje => g_k_nulo    );
+    --
+  END IF;
+  --
+ END p_val_en;
+ --
+ /* -----------------------------------------------------
+ || p_val_no_en:
+ ||
+ || p_valor_campo NO debe encontrarse en p_valor_in.
+ ||
+ || Los valores deben ir separados por comas (,) y en
+ || ningun caso entre comillas. Es decir, si se quiere 
+ || comprobar que los valores sean: A, B o C, p_valor_in
+ || serÃ¿Â¡: 'A,B,C'
+ */ -----------------------------------------------------
+ --
+ PROCEDURE p_val_no_en(p_valor_campo VARCHAR2                ,
+                       p_valor_no_en VARCHAR2                ,
+                       p_cod_idioma  g1010010.cod_idioma%TYPE) IS
+  --
+  l_t_valores ss_k_mensaje.t_t_valores;
+  --
+ BEGIN
+  --
+  IF fp_en(p_valor_campo => p_valor_campo ,
+           p_valor_en    => p_valor_no_en)
+   THEN
+    --
+    l_t_valores(1) := p_valor_campo;
+    l_t_valores(2) := p_valor_no_en;
+    --
+    p_gen_error(p_cod_idioma  => p_cod_idioma,
+                p_cod_mensaje => 99900020    ,
+                p_t_valores   => l_t_valores ,
+                p_pre_mensaje => g_k_nulo    ,
+                p_pos_mensaje => g_k_nulo    );
+    --
+  END IF;
+  --
+ END p_val_no_en;
+ --
+ /* -----------------------------------------------------
+ || p_val_entre :
+ ||
+ || p_valor_campo debe encontrarse entre p_valor_min y
+ || p_valir_max
+ */ -----------------------------------------------------
+ --
+ PROCEDURE p_val_entre(p_valor_campo NUMBER                  ,
+                       p_valor_min   NUMBER                  ,
+                       p_valor_max   NUMBER                  ,
+                       p_cod_idioma  g1010010.cod_idioma%TYPE) IS
+  --
+  l_t_valores ss_k_mensaje.t_t_valores;
+  --
+ BEGIN
+  --
+  IF p_valor_campo NOT BETWEEN p_valor_min
+                           AND p_valor_max
+   THEN
+    --
+    l_t_valores(1) := p_valor_campo;
+    l_t_valores(2) := p_valor_min;
+    l_t_valores(3) := p_valor_max;
+    --
+    p_gen_error(p_cod_idioma  => p_cod_idioma,
+                p_cod_mensaje => 99900021    ,
+                p_t_valores   => l_t_valores ,
+                p_pre_mensaje => g_k_nulo    ,
+                p_pos_mensaje => g_k_nulo    );
+    --
+  END IF;
+  --
+ END p_val_entre;
+ --
+ /* -----------------------------------------------------
+ || p_val_no_entre :
+ ||
+ || p_valor_campo NO debe encontrarse entre p_valor_min y
+ || p_valir_max
+ */ -----------------------------------------------------
+ --
+ PROCEDURE p_val_no_entre(p_valor_campo NUMBER                  ,
+                          p_valor_min   NUMBER                  ,
+                          p_valor_max   NUMBER                  ,
+                          p_cod_idioma  g1010010.cod_idioma%TYPE) IS
+  --
+  l_t_valores ss_k_mensaje.t_t_valores;
+  --
+ BEGIN
+  --
+  IF p_valor_campo BETWEEN p_valor_min
+                       AND p_valor_max
+   THEN
+    --
+    l_t_valores(1) := p_valor_campo;
+    l_t_valores(2) := p_valor_min;
+    l_t_valores(3) := p_valor_max;
+    --
+    p_gen_error(p_cod_idioma  => p_cod_idioma,
+                p_cod_mensaje => 99900022    ,
+                p_t_valores   => l_t_valores ,
+                p_pre_mensaje => g_k_nulo    ,
+                p_pos_mensaje => g_k_nulo    );
+    --
+  END IF;
+  --
+ END p_val_no_entre;
+ --
+ /* -----------------------------------------------------
+ || p_gen_error:
+ ||
+ || Devuelve el texto sustituyendo los %n de la columna
+ || txt_mensaje. Incluye la posibilidad de informar un
+ || texto previo (p_pre_mensaje) que se colocarÃ¿Â¡ por 
+ || delante del mensaje y un texto posterior 
+ || (p_pos_mensaje) que se colocarÃ¿Â¡ a continuaciÃ¿Â³n del
+ || mensaje
+ */ -----------------------------------------------------
+ --
+ PROCEDURE p_gen_error(p_cod_idioma  g1010020.cod_idioma %TYPE,
+                       p_cod_mensaje g1010020.cod_mensaje%TYPE,
+                       p_t_valores   ss_k_mensaje.t_t_valores ,
+                       p_pre_mensaje VARCHAR2                 ,
+                       p_pos_mensaje VARCHAR2                 ) IS
+ BEGIN
+  --
+  pp_raise(p_cod_mensaje => p_cod_mensaje,
+           p_txt_mensaje => ss_k_mensaje.f_texto_idioma(p_cod_idioma  => p_cod_idioma ,
+                                                        p_cod_mensaje => p_cod_mensaje,
+                                                        p_t_valores   => p_t_valores  ,
+                                                        p_pre_mensaje => p_pre_mensaje,
+                                                        p_pos_mensaje => p_pos_mensaje)
+          );
+  --
+ END p_gen_error;                       
+ --
+   --
+   /* -----------------------------------------------------
+   || p_gen_comienzo_traza :
+   ||
+   || Genera la traza correspondiente a un comienzo de
+   || procedimiento
+   */ -----------------------------------------------------
+   --
+   PROCEDURE p_gen_comienzo_traza(p_nom_prg IN t_trn_trn_r_dbg.pgm_nam%TYPE,
+                                  p_nom_metodo IN t_trn_trn_r_dbg.mbr_nam%TYPE)
+   IS
+      --
+      PRAGMA AUTONOMOUS_TRANSACTION;
+      --
+   BEGIN
+      --
+      IF fp_dev_traza_habilitada
+      THEN
+         --
+         pp_inserta_traza(p_idn_traza          => g_idn_trazas,
+                          p_num_secu_traza     => g_num_secu_trazas,
+                          p_fec_hora_traza_imv => current_timestamp,
+                          p_ini_fin_traza      => g_k_inicio_traza,
+                          p_nivel_indice_trazas=> g_nivel_indice_trazas,
+                          p_nom_prg            => p_nom_prg,
+                          p_tip_traza          => g_k_tip_traza_metodo,
+                          p_nom_traza          => p_nom_metodo,
+                          p_val_traza          => NULL);
+         --
+         g_nivel_indice_trazas := g_nivel_indice_trazas + 1;
+         --
+      END IF;
+      --
+   END p_gen_comienzo_traza;
+   --
+   /* -----------------------------------------------------
+   || p_gen_final_traza :
+   ||
+   || Genera la traza correspondiente a un final de
+   || procedimiento
+   */ -----------------------------------------------------
+   --
+   PROCEDURE p_gen_final_traza(p_nom_prg    IN t_trn_trn_r_dbg.pgm_nam%TYPE,
+                               p_nom_metodo IN t_trn_trn_r_dbg.mbr_nam%TYPE)
+   IS
+   BEGIN
+      --
+      IF fp_dev_traza_habilitada
+      THEN
+         --
+         g_nivel_indice_trazas := g_nivel_indice_trazas - 1;
+         --
+         pp_inserta_traza(p_idn_traza               => g_idn_trazas,
+                          p_num_secu_traza          => g_num_secu_trazas,
+                          p_fec_hora_traza_imv      => current_timestamp,
+                          p_ini_fin_traza           => g_k_final_traza,
+                          p_nivel_indice_trazas            => g_nivel_indice_trazas,
+                          p_nom_prg                 => p_nom_prg,
+                          p_tip_traza               => g_k_tip_traza_metodo,
+                          p_nom_traza               => p_nom_metodo,
+                          p_val_traza               => NULL);
+         --
+      END IF;
+      --
+   END p_gen_final_traza;
+   --
+   /* -----------------------------------------------------
+   || p_gen_traza_variable :
+   ||
+   || Genera la traza correspondiente a un final de
+   || procedimiento
+   */ -----------------------------------------------------
+   --
+   PROCEDURE p_gen_traza_variable (p_nom_prg IN t_trn_trn_r_dbg.pgm_nam%TYPE,
+                                   p_nom_variable IN t_trn_trn_r_dbg.mbr_nam%TYPE,
+                                   p_val_variable IN t_trn_trn_r_dbg.mbr_val%TYPE)
+   IS
+   BEGIN
+      --
+      IF fp_dev_traza_habilitada
+      THEN
+         --
+         pp_inserta_traza (p_idn_traza            => g_idn_trazas,
+                           p_num_secu_traza       => g_num_secu_trazas,
+                           p_fec_hora_traza_imv   => current_timestamp,
+                           p_ini_fin_traza        => NULL,
+                           p_nivel_indice_trazas         => g_nivel_indice_trazas,
+                           p_nom_prg              => p_nom_prg,
+                           p_tip_traza            => g_k_tip_traza_variable,
+                           p_nom_traza            => p_nom_variable,
+                           p_val_traza            => p_val_variable);
+         --
+      END IF;
+      --
+   END p_gen_traza_variable;
+   --
+   /* -----------------------------------------------------
+   || p_gen_traza_variable :
+   ||
+   || Genera la traza correspondiente a un valor de
+   || variable
+   */ -----------------------------------------------------
+   --
+   PROCEDURE p_gen_traza_variable (p_nom_prg      IN t_trn_trn_r_dbg.pgm_nam%TYPE,
+                                   p_nom_variable IN t_trn_trn_r_dbg.mbr_nam%TYPE,
+                                   p_val_variable IN t_trn_trn_r_dbg.dbg_sqn%TYPE)
+   IS
+   BEGIN
+      --
+      p_gen_traza_variable (p_nom_prg => p_nom_prg,
+                            p_nom_variable => p_nom_variable,
+                            p_val_variable => to_char(p_val_variable));
+      --
+   END p_gen_traza_variable;
+   --
+   /* -----------------------------------------------------
+   || p_gen_traza_variable :
+   ||
+   || Genera la traza correspondiente a un valor de
+   || variable
+   */ -----------------------------------------------------
+   --
+   PROCEDURE p_gen_traza_variable (p_nom_prg      IN t_trn_trn_r_dbg.pgm_nam%TYPE,
+                                   p_nom_variable IN t_trn_trn_r_dbg.mbr_nam%TYPE,
+                                   p_val_variable IN t_trn_trn_r_dbg.tim_inv%TYPE)
+   IS
+   BEGIN
+      --
+      p_gen_traza_variable (p_nom_prg => p_nom_prg,
+                            p_nom_variable => p_nom_variable,
+                            p_val_variable => TO_CHAR(p_val_variable, trn_k_g0000000.f_formato_fecha_sin_separador));
+      --
+   END p_gen_traza_variable;
+   --
+   /* -----------------------------------------------------
+   || p_gen_traza_variable :
+   ||
+   || Genera la traza correspondiente a un valor de
+   || variable
+   */ -----------------------------------------------------
+   --
+   PROCEDURE p_gen_traza_variable (p_nom_prg      IN t_trn_trn_r_dbg.pgm_nam%TYPE,
+                                   p_nom_variable IN t_trn_trn_r_dbg.mbr_nam%TYPE,
+                                   p_val_variable IN BOOLEAN)
+   IS
+   --
+   BEGIN
+      --
+      p_gen_traza_variable (p_nom_prg => p_nom_prg,
+                            p_nom_variable => p_nom_variable,
+                            p_val_variable =>  fp_dev_char_from_boolean(p_booleano=> p_val_variable));
+      --
+   END p_gen_traza_variable;
+   --
+   /* -----------------------------------------------------
+   || p_gen_traza_parametro :
+   ||
+   || Genera la traza correspondiente a un valor de
+   || parametro
+   */ -----------------------------------------------------
+   --
+   PROCEDURE p_gen_traza_parametro(p_nom_prg       IN t_trn_trn_r_dbg.pgm_nam%TYPE,
+                                   p_nom_parametro IN t_trn_trn_r_dbg.mbr_nam%TYPE,
+                                   p_val_parametro IN t_trn_trn_r_dbg.mbr_val%TYPE)
+   IS
+   BEGIN
+      --
+      IF fp_dev_traza_habilitada
+      THEN
+         --
+         pp_inserta_traza(p_idn_traza              => g_idn_trazas,
+                          p_num_secu_traza         => g_num_secu_trazas,
+                          p_fec_hora_traza_imv     => current_timestamp,
+                          p_ini_fin_traza          => NULL,
+                          p_nivel_indice_trazas           => g_nivel_indice_trazas,
+                          p_nom_prg                => p_nom_prg,
+                          p_tip_traza              => g_k_tip_traza_parametro,
+                          p_nom_traza              => p_nom_parametro,
+                          p_val_traza              => p_val_parametro);
+         --
+      END IF;
+      --
+   END p_gen_traza_parametro;
+   --
+   /* -----------------------------------------------------
+   || p_gen_traza_parametro :
+   ||
+   || Genera la traza correspondiente a un valor de
+   || parametro
+   */ -----------------------------------------------------
+   --
+   PROCEDURE p_gen_traza_parametro(p_nom_prg       IN t_trn_trn_r_dbg.pgm_nam%TYPE,
+                                   p_nom_parametro IN t_trn_trn_r_dbg.mbr_nam%TYPE,
+                                   p_val_parametro IN t_trn_trn_r_dbg.dbg_sqn%TYPE)
+   IS
+   BEGIN
+      --
+      p_gen_traza_parametro(p_nom_prg => p_nom_prg,
+                            p_nom_parametro => p_nom_parametro,
+                            p_val_parametro => to_char(p_val_parametro));
+      --
+   END p_gen_traza_parametro;
+   --
+   /* -----------------------------------------------------
+   || p_gen_traza_parametro :
+   ||
+   || Genera la traza correspondiente a un valor de
+   || parametro
+   */ -----------------------------------------------------
+   --
+   PROCEDURE p_gen_traza_parametro(p_nom_prg       IN t_trn_trn_r_dbg.pgm_nam%TYPE,
+                                   p_nom_parametro IN t_trn_trn_r_dbg.mbr_nam%TYPE,
+                                   p_val_parametro IN t_trn_trn_r_dbg.tim_inv%TYPE)
+   IS
+   BEGIN
+      --
+      p_gen_traza_parametro(p_nom_prg => p_nom_prg,
+                            p_nom_parametro => p_nom_parametro,
+                            p_val_parametro => TO_CHAR(p_val_parametro, trn_k_g0000000.f_formato_fecha_sin_separador));
+      --
+   END p_gen_traza_parametro;
+   --
+   /* -----------------------------------------------------
+   || p_gen_traza_parametro :
+   ||
+   || Genera la traza correspondiente a un valor de
+   || parametro
+   */ -----------------------------------------------------
+   --
+   PROCEDURE p_gen_traza_parametro(p_nom_prg       IN t_trn_trn_r_dbg.pgm_nam%TYPE,
+                                   p_nom_parametro IN t_trn_trn_r_dbg.mbr_nam%TYPE,
+                                   p_val_parametro IN BOOLEAN)
+   IS
+   BEGIN
+      --
+      p_gen_traza_parametro(p_nom_prg       => p_nom_prg,
+                            p_nom_parametro => p_nom_parametro,
+                            p_val_parametro => fp_dev_char_from_boolean(p_booleano => p_val_parametro));
+      --
+   END p_gen_traza_parametro;
+   --
+   /* -----------------------------------------------------
+   || p_gen_traza_retorno_funcion :
+   ||
+   || Genera la traza correspondiente a un return
+   */ -----------------------------------------------------
+   --
+    PROCEDURE p_gen_traza_retorno_funcion(p_nom_prg     IN t_trn_trn_r_dbg.pgm_nam%TYPE,
+                                          p_nom_funcion IN t_trn_trn_r_dbg.mbr_nam%TYPE,
+                                          p_val_retorno IN t_trn_trn_r_dbg.mbr_val%TYPE)
+   IS
+   BEGIN
+      --
+      IF fp_dev_traza_habilitada
+      THEN
+         --
+         pp_inserta_traza(p_idn_traza          => g_idn_trazas,
+                          p_num_secu_traza     => g_num_secu_trazas,
+                          p_fec_hora_traza_imv => current_timestamp,
+                          p_ini_fin_traza      => NULL,
+                          p_nivel_indice_trazas=> g_nivel_indice_trazas,
+                          p_nom_prg            => p_nom_prg,
+                          p_tip_traza          => g_k_tip_traza_retorno,
+                          p_nom_traza          => p_nom_funcion,
+                          p_val_traza          => p_val_retorno);
+         --
+      END IF;
+      --
+   END p_gen_traza_retorno_funcion;
+   --
+   --
+   PROCEDURE p_gen_traza_retorno_funcion(p_nom_prg IN t_trn_trn_r_dbg.pgm_nam%TYPE,
+                                         p_nom_funcion IN t_trn_trn_r_dbg.mbr_nam%TYPE,
+                                         p_val_retorno IN t_trn_trn_r_dbg.dbg_sqn%TYPE)
+   IS
+   BEGIN
+      --
+      p_gen_traza_retorno_funcion(p_nom_prg => p_nom_prg,
+                                  p_nom_funcion => p_nom_funcion,
+                                  p_val_retorno => TO_CHAR(p_val_retorno));
+      --
+   END p_gen_traza_retorno_funcion;
+   --
+   --
+   PROCEDURE p_gen_traza_retorno_funcion(p_nom_prg     IN t_trn_trn_r_dbg.pgm_nam%TYPE,
+                                         p_nom_funcion IN t_trn_trn_r_dbg.mbr_nam%TYPE,
+                                         p_val_retorno IN t_trn_trn_r_dbg.tim_inv%TYPE)
+   IS
+   BEGIN
+      --
+      p_gen_traza_retorno_funcion(p_nom_prg => p_nom_prg,
+                                  p_nom_funcion => p_nom_funcion,
+                                  p_val_retorno => TO_CHAR(p_val_retorno, trn_k_g0000000.f_formato_fecha_sin_separador));
+      --
+   END p_gen_traza_retorno_funcion;
+   --
+   PROCEDURE p_gen_traza_retorno_funcion(p_nom_prg IN t_trn_trn_r_dbg.pgm_nam%TYPE,
+                                         p_nom_funcion IN t_trn_trn_r_dbg.mbr_nam%TYPE,
+                                         p_val_retorno IN BOOLEAN)
+   IS
+   BEGIN
+      --
+      p_gen_traza_retorno_funcion(p_nom_prg => p_nom_prg,
+                                  p_nom_funcion => p_nom_funcion,
+                                  p_val_retorno => fp_dev_char_from_boolean(p_booleano => p_val_retorno));
+      --
+   END p_gen_traza_retorno_funcion;
+   --
+   /* -----------------------------------------------------
+   || p_gen_traza_error :
+   ||
+   || Genera la traza correspondiente a un error
+   */ -----------------------------------------------------
+   --
+   PROCEDURE p_gen_traza_error(p_nom_prg t_trn_trn_r_dbg.pgm_nam%TYPE)
+   IS
+   BEGIN
+      --
+      IF fp_dev_traza_habilitada
+      THEN
+       --
+       pp_inserta_traza(p_idn_traza          => g_idn_trazas,
+                        p_num_secu_traza     => g_num_secu_trazas,
+                        p_fec_hora_traza_imv => current_timestamp,
+                        p_ini_fin_traza      => NULL,
+                        p_nivel_indice_trazas=> g_nivel_indice_trazas,
+                        p_nom_prg            => p_nom_prg,
+                        p_tip_traza          => g_k_tip_traza_error,
+                        p_nom_traza          => NULL,
+                        p_val_traza          => SQLCODE || g_k_blanco || SQLERRM);
+       --
+      END IF;
+   --
+   END;
+   --
+   --
+   /* -----------------------------------------------------
+   || p_gen_traza_comentario :
+   ||
+   || Genera la traza correspondiente a un comentario
+   */ -----------------------------------------------------
+   --
+   PROCEDURE p_gen_traza_comentario(p_nom_prg        t_trn_trn_r_dbg.pgm_nam%TYPE,
+                                    p_comentario     t_trn_trn_r_dbg.mbr_val%TYPE)
+   IS
+   BEGIN
+      --
+      IF fp_dev_traza_habilitada
+      THEN
+      --
+      pp_inserta_traza(p_idn_traza          => g_idn_trazas,
+                       p_num_secu_traza     => g_num_secu_trazas,
+                       p_fec_hora_traza_imv => current_timestamp,
+                       p_ini_fin_traza      => NULL,
+                       p_nivel_indice_trazas=> g_nivel_indice_trazas,
+                       p_nom_prg            => p_nom_prg,
+                       p_tip_traza          => g_k_tip_traza_comentario,
+                       p_nom_traza          => NULL,
+                       p_val_traza          => p_comentario);
+      --
+      END IF;
+   --
+   END;
+    --
+    --
+   /* -----------------------------------------------------
+   || p_habilita_traza :
+   ||
+   || Habilita la generacion de trazas
+   */ -----------------------------------------------------
+   --
+   PROCEDURE p_habilita_traza(p_idn_traza IN t_trn_trn_r_dbg.dbg_idn%TYPE)
+   IS
+     --
+     lv_prp  t_trn_trn_r_dbg.dbg_idn%TYPE;
+     --
+   BEGIN
+      --
+      lv_prp := SYS_CONTEXT('CLIENTCONTEXT','X-REMOTE-USER') ||
+                ':'                                          ||
+                SYS_CONTEXT('CLIENTCONTEXT','X-TBID')        ||
+                ':'                                          ||
+                SYS_CONTEXT('CLIENTCONTEXT','X-REQUEST-ID');
+      --
+      g_trazas_habilitada     := TRUE;
+      g_idn_trazas     := p_idn_traza;
+      g_num_secu_trazas     := 0;
+      g_nivel_indice_trazas := 0;
+      --
+      IF SYS_CONTEXT('CLIENTCONTEXT','X-TBID') IS NOT NULL
+      THEN
+         --
+         g_idn_trazas := p_idn_traza || lv_prp;
+         --
+      END IF;
+      --
+   END p_habilita_traza;
+   --
+   /* -----------------------------------------------------
+   || p_gen_habilita_traza :
+   ||
+   || Habilita la generacion de trazas
+   */ -----------------------------------------------------
+   --
+   PROCEDURE p_gen_habilita_traza(p_idn_traza IN t_trn_trn_r_dbg.dbg_idn%TYPE,
+                                  pm_dbg_enb IN BOOLEAN)
+   IS
+      --
+      lv_prp  t_trn_trn_r_dbg.dbg_idn%TYPE;
+      --
+   BEGIN
+      --
+      lv_prp := SYS_CONTEXT('CLIENTCONTEXT','X-REMOTE-USER') ||
+                ':'                                          ||
+                SYS_CONTEXT('CLIENTCONTEXT','X-TBID')        ||
+                ':'                                          ||
+                SYS_CONTEXT('CLIENTCONTEXT','X-REQUEST-ID');
+      --
+      g_trazas_habilitada     := pm_dbg_enb;
+      g_idn_trazas            := p_idn_traza;
+      g_num_secu_trazas       := 0;
+      g_nivel_indice_trazas   := 0;
+      --
+      IF SYS_CONTEXT('CLIENTCONTEXT','X-TBID') IS NOT NULL
+      THEN
+         --
+         g_idn_trazas := p_idn_traza || lv_prp;
+         --
+      END IF;
+      --
+   END;
+   --
+   /* -----------------------------------------------------
+   || p_deshabilita_traza :
+   ||
+   || Inhabilita la generacion de trazas
+   */ -----------------------------------------------------
+   --
+   PROCEDURE p_deshabilita_traza IS
+   BEGIN
+      --
+      g_trazas_habilitada := FALSE;
+      --
+   END p_deshabilita_traza;
+   --
+   /* -----------------------------------------------------
+   || p_borra_traza :
+   ||
+   || Elimina las trazas con el idn recibido
+   */ -----------------------------------------------------
+   --
+   PROCEDURE p_borra_traza(p_idn_traza t_trn_trn_r_dbg.dbg_idn%TYPE)
+   IS
+      --
+      PRAGMA AUTONOMOUS_TRANSACTION;
+      --
+   BEGIN
+      --
+      DELETE FROM t_trn_trn_r_dbg
+       WHERE dbg_idn = p_idn_traza;
+      --
+      COMMIT;
+      --
+   END;
+   --
+   --
+   /* -----------------------------------------------------
+   || p_borra_traza :
+   ||
+   || Elimina las trazas generadas desde tim_inv hacia atras
+   */ -----------------------------------------------------
+   --
+   PROCEDURE p_borra_traza(p_fec_traza t_trn_trn_r_dbg.tim_inv%TYPE)
+   IS
+      --
+      PRAGMA AUTONOMOUS_TRANSACTION;
+      --
+   BEGIN
+      --
+      DELETE FROM t_trn_trn_r_dbg
+       WHERE tim_inv < trunc(p_fec_traza) + 1;
+      --
+      COMMIT;
+      --
+   END;
+   --
+   --
+   /* -----------------------------------------------------
+   || p_borra_traza :
+   ||
+   || Elimina las trazas generadas desde el dia
+   || recibido en dat_inv y la hora recibida en tim_inv
+   || hacia atras
+   */ -----------------------------------------------------
+   --
+   PROCEDURE p_borra_traza(p_fec_traza      t_trn_trn_r_dbg.tim_inv%TYPE,
+                           p_fec_hora_traza t_trn_trn_r_dbg.tim_inv%TYPE)
+   IS
+      --
+      PRAGMA AUTONOMOUS_TRANSACTION;
+      --
+      lv_dat_tim DATE;
+      --
+   BEGIN
+      --
+      lv_dat_tim := trunc(p_fec_traza) + (p_fec_hora_traza - trunc(p_fec_hora_traza));
+      DELETE FROM t_trn_trn_r_dbg
+       WHERE tim_inv <= lv_dat_tim;
+      --
+      COMMIT;
+      --
+   END;
+   --
+--
+--    /* -----------------------------------------------------
+--    || p_dev_dbg :
+--    ||
+--    || Recupera las trazas correspondientes al idn recibido
+--    */ -----------------------------------------------------
+--    --
+   PROCEDURE p_dev_trazas(p_idn_traza t_trn_trn_r_dbg.dbg_idn%TYPE,
+                          p_tbl_trazas  OUT tb_trazas )IS
+--     --
+     CURSOR lc_t_trn_trn_r_dbg(p_idn_traza t_trn_trn_r_dbg.dbg_idn%TYPE) IS
+      SELECT t.dbg_idn || g_k_blanco || t.tim_inv || g_k_blanco ||
+             lpad(t.dbg_sqn, 5, g_k_blanco) || g_k_blanco ||
+             nvl(t.dbg_bgn_end, g_k_blanco) || g_k_blanco ||
+             rpad(g_k_usc, t.ind_lvl + 1, g_k_usc) ||
+             rpad(t.pgm_nam, 40 - t.ind_lvl, g_k_punto) || g_k_blanco || t.mbr_typ ||
+             g_k_blanco || rpad(t.mbr_nam, 30, g_k_usc) || g_k_blanco || t.mbr_val
+        FROM t_trn_trn_r_dbg t
+       WHERE t.dbg_idn = p_idn_traza;
+     --
+    BEGIN
+     --
+     OPEN lc_t_trn_trn_r_dbg(p_idn_traza);
+     FETCH lc_t_trn_trn_r_dbg BULK COLLECT
+     INTO p_tbl_trazas LIMIT trn_k_g0000000.f_max_num_filas_consulta + 1;
+     CLOSE lc_t_trn_trn_r_dbg;
+     --
+    END;
+--
+--   --
+END trn_k_ptd;
+/
+

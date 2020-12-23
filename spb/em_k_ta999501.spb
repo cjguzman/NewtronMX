@@ -1,0 +1,180 @@
+CREATE OR REPLACE PACKAGE BODY TRP_MX_DL.EM_K_TA999501 
+AS
+ /* -------------------- DESCRIPCION -----------------------------
+ || Acceso a la tabla ta999501
+ || Procedimientos y funciones para el acceso de la tabla ta999501
+ */ --------------------------------------------------------------
+ --
+ /* -------------------- VERSION = 1.00 -------------------------- */
+ --
+ /* -------------------- MODIFICACIONES --------------------------
+ || 2020/11/19  - DZAVALA - v 1.00 
+ || Creacion del Package
+ */ --------------------------------------------------------------
+ --
+ /* --------------------------------------------------------------
+ || Aqui comienza la declaracion de variables GLOBALES
+ */ --------------------------------------------------------------
+ --
+ g_reg                                ta999501%ROWTYPE;
+ --
+ g_existe                                      BOOLEAN;
+ --
+ g_anx_mensaje                           VARCHAR2(100);
+ --
+ /* -------------------------------------------------------------
+ || Aqui comienza la declaracion de constantes GLOBALES
+ */ -------------------------------------------------------------
+ --
+ g_k_ini_corchete          CONSTANT VARCHAR2(2) := ' [';
+ --
+ g_k_fin_corchete          CONSTANT VARCHAR2(1) := ']' ;
+ --
+ /* ------------------------------------------------------------
+ || f_cod_tip_indem_renov:
+ || Devuelve el valor de la columna : cod_tip_indem_renov
+ */ ------------------------------------------------------------
+ --
+ PROCEDURE pp_comprueba_error
+ IS
+    --
+    l_t_valores tron2000.trn_k_ptd.t_t_valores;
+    --
+ BEGIN
+    --
+    IF NOT g_existe
+    THEN
+       --
+       l_t_valores(1) := g_k_ini_corchete || 'PK ta999501' || g_k_fin_corchete;
+       --
+       tron2000.trn_k_ptd.p_gen_error(p_cod_idioma  => tron2000.trn_k_ptd.f_dev_cod_idioma,
+                                      p_cod_mensaje => 20001                              ,
+                                      p_t_valores   => l_t_valores                        ,
+                                      p_pre_mensaje => tron2000.trn_k_ptd.NULO            ,
+                                      p_pos_mensaje => '[TIPO DE INDEMNIZACION]'          );
+       --
+    END IF;
+    --
+    IF g_reg.mca_inh = 'S'
+    THEN
+       --
+       tron2000.trn_k_ptd.p_gen_error(p_cod_idioma  => tron2000.trn_k_ptd.f_dev_cod_idioma,
+                                      p_cod_mensaje => 20020                              ,
+                                      p_t_valores   => l_t_valores                        ,
+                                      p_pre_mensaje => tron2000.trn_k_ptd.nulo            ,
+                                      p_pos_mensaje => ':[TIPO DE INDEMNIZACION]'         );
+       --
+    END IF;
+    --
+ END pp_comprueba_error;
+ --
+ /* --------------------------------------------------------
+ || p_lee_vigente:
+ || Recupera el los datos vigentes del catalogo
+ */ --------------------------------------------------------
+ --
+ PROCEDURE p_lee_vigente(p_cod_cia             ta999501.cod_cia            %TYPE,
+                         p_cod_sector          ta999501.cod_sector         %TYPE,
+                         p_cod_ramo            ta999501.cod_ramo           %TYPE,
+                         p_num_poliza_grupo    ta999501.num_poliza_grupo   %TYPE,
+                         p_num_contrato        ta999501.num_contrato       %TYPE,
+                         p_num_subcontrato     ta999501.num_subcontrato    %TYPE,
+                         p_cod_canal3          ta999501.cod_canal3         %TYPE,
+                         p_cod_producto        ta999501.cod_producto       %TYPE,
+                         p_cod_amb_circulacion ta999501.cod_amb_circulacion%TYPE,
+                         p_cod_tip_indem       ta999501.cod_tip_indem      %TYPE,
+                         p_fec_validez         ta999501.fec_validez        %TYPE)
+                         
+ IS
+    e_mca_inh           EXCEPTION                     ;
+    l_t_valores         tron2000.trn_k_ptd.t_t_valores;
+    l_reg               ta999501%ROWTYPE              ;
+    --
+    CURSOR cl_ta999501
+    IS
+       --
+       SELECT a.*
+         FROM ta999501 a
+        WHERE cod_cia             =   p_cod_cia
+          AND cod_sector          IN (p_cod_sector         ,em_k_999_atr.COD_SECTOR_GEN               )
+          AND cod_ramo            IN (p_cod_ramo           ,tron2000.em_k_ptd_gni.COD_RAMO_GEN        )
+          AND num_poliza_grupo    IN (p_num_poliza_grupo   ,tron2000.em_k_ptd_gni.NUM_POLIZA_GRUPO_GEN)
+          AND num_contrato        IN (p_num_contrato       ,tron2000.em_k_ptd_gni.NUM_CONTRATO_GEN    )
+          AND num_subcontrato     IN (p_num_subcontrato    ,tron2000.em_k_ptd_gni.NUM_SUBCONTRATO_GEN )
+          AND cod_canal3          IN (p_cod_canal3         ,tron2000.dc_k_ptd.COD_CANAL3_GEN          )
+          AND cod_producto        IN (p_cod_producto       ,em_k_999_atr.COD_PRODUCTO_GEN             )
+          AND cod_amb_circulacion IN (p_cod_amb_circulacion,em_k_999_atr.COD_AMB_CIRCULACION_GEN      )
+          AND cod_tip_indem       IN (p_cod_tip_indem      ,em_k_999_atr.COD_TIP_INDEM_GEN            )
+          AND fec_validez         =  ( SELECT MAX(fec_validez)
+                                         FROM ta999501
+                                        WHERE cod_cia               = a.cod_cia
+                                          AND cod_sector            = a.cod_sector
+                                          AND cod_ramo              = a.cod_ramo
+                                          AND num_poliza_grupo      = a.num_poliza_grupo
+                                          AND num_contrato          = a.num_contrato
+                                          AND num_subcontrato       = a.num_subcontrato
+                                          AND cod_canal3            = a.cod_canal3
+                                          AND cod_producto          = a.cod_producto
+                                          AND cod_amb_circulacion   = a.cod_amb_circulacion
+                                          AND cod_tip_indem         = a.cod_tip_indem
+                                          AND fec_validez          <= p_fec_validez
+                                     )
+        ORDER BY cod_sector         ,
+                 cod_ramo           ,
+                 num_poliza_grupo   ,
+                 num_contrato       ,
+                 num_subcontrato    ,
+                 cod_canal3         ,
+                 cod_producto       ,
+                 cod_amb_circulacion,
+                 cod_tip_indem      ,
+                 fec_validez        ;
+    --
+ BEGIN
+    --
+    OPEN        cl_ta999501              ;
+    FETCH       cl_ta999501    INTO g_reg;
+    g_existe := cl_ta999501%FOUND        ;
+    CLOSE       cl_ta999501              ;
+    --
+    pp_comprueba_error;
+    --
+    IF l_reg.mca_inh = tron2000.trn_k_ptd.SI
+    THEN
+       --
+       RAISE e_mca_inh;
+       --
+    END IF;
+    --
+    RETURN;
+    --
+ EXCEPTION
+    WHEN e_mca_inh
+    THEN
+       --
+       tron2000.trn_k_ptd.p_gen_error(p_cod_idioma  => tron2000.trn_k_ptd.f_dev_cod_idioma,
+                                      p_cod_mensaje => 20020                              ,
+                                      p_t_valores   => l_t_valores                        ,
+                                      p_pre_mensaje => tron2000.trn_k_ptd.NULO            ,
+                                      p_pos_mensaje => '[TIPO DE INDEMNIZACION]'          );
+       --
+ END p_lee_vigente;
+ --
+ /* --------------------------------------------------------
+ || f_cod_tip_indem_renov:
+ || Devuelve el valor de la columna cod_tip_indem_renov
+ */ --------------------------------------------------------
+ --
+ FUNCTION f_cod_tip_indem_renov
+          RETURN NUMBER
+ IS
+ BEGIN
+    --
+    pp_comprueba_error;
+    --
+    RETURN g_reg.cod_tip_indem_renov;
+    --
+ END f_cod_tip_indem_renov;
+ --
+END em_k_ta999501;
+/

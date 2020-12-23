@@ -1,0 +1,154 @@
+CREATE OR REPLACE PACKAGE BODY TRP_MX_DL.em_k_ta999001
+AS
+  /* -------------------- DESCRIPCION --------------------
+ || Acceso a la tabla ta999001
+ || Procedimientos y funciones para el acceso de la tabla ta999001
+ ||
+ */ -----------------------------------------------------
+ --
+ /* -------------------- VERSION = 1.02 -------------------- */
+ --
+ /* -------------------- MODIFICACIONES -----------------
+ || 2020/12/04 - JAPERE4 - v 1.02
+ || Modificacion de la funcion f_lee_vigente:
+ || Se incluye el campo cod_pais como parte de la signatura
+ || del metodo.
+ || Ademas se cambia el nombre de la columna cod_localidad
+ || por cod_prov.
+ */ -----------------------------------------------------
+ --
+ /* --------------------------------------------------
+ || Aqui comienza la declaracion de variables GLOBALES
+ */ --------------------------------------------------
+ --
+ g_existe BOOLEAN := FALSE;
+ --
+ /* ---------------------------------------------------
+ || Aqui comienza la declaracion de constantes GLOBALES
+ */ ---------------------------------------------------
+ --
+ g_k_ini_corchete CONSTANT VARCHAR2(2) := ' [';
+ g_k_fin_corchete CONSTANT VARCHAR2(1) := ']' ;
+ --
+ /* -------------------------------------------
+ || Definicion de Globales Privadas al Package
+ */ -------------------------------------------
+ --
+ -- ------------------------------------------------------------
+ --
+ /* ----------------------------------------------------
+ || Aqui comienza la declaracion de subprogramas LOCALES
+ */ ----------------------------------------------------
+ --
+ -- ------------------------------------------------------------
+ --
+ /**
+ || Comprueba que se haya leido informacion
+ */
+ PROCEDURE pp_comprueba_error
+ IS
+    l_t_valores  tron2000.trn_k_ptd.t_t_valores;
+ BEGIN
+    --
+    IF NOT g_existe
+    THEN
+       --
+       l_t_valores(1) := g_k_ini_corchete || 'PK ta999001' || g_k_fin_corchete;
+       --
+       tron2000.trn_k_ptd.p_gen_error(p_cod_idioma  => tron2000.trn_k_ptd.f_dev_cod_idioma,
+                                      p_cod_mensaje => 20001                              ,
+                                      p_t_valores   => l_t_valores                        ,
+                                      p_pre_mensaje => tron2000.trn_k_ptd.NULO            ,
+                                      p_pos_mensaje => '[TIPO POBLACION CH RIESGO]'       ); 
+       --
+    END IF;
+    --
+ END pp_comprueba_error;
+ --
+ /* -------------------------------------------
+ || Procedimientos Privados
+ */ -------------------------------------------
+ --
+ --
+ --
+ /* --------------------------------------------------------
+ || Aqui comienza la declaracion de subprogramas del PACKAGE
+ */ --------------------------------------------------------
+ --
+ -- ------------------------------------------------------------
+ --
+ /* -------------------------------------------
+ || Procedimientos Publicos
+ */ -------------------------------------------
+ --
+ /**
+ || f_lee_vigente:
+ || Lee un registro por PK y recupera valores vigentes
+ */
+ FUNCTION f_lee_vigente(
+                        p_cod_cia        ta999001.cod_cia       %TYPE,
+                        p_cod_pais       ta999001.cod_pais      %TYPE,
+                        p_cod_estado     ta999001.cod_estado    %TYPE,
+                        p_cod_prov       ta999001.cod_prov      %TYPE,
+                        p_cod_postal     ta999001.cod_postal    %TYPE,
+                        p_fec_validez    ta999001.fec_validez   %TYPE)
+             RETURN ta999001%ROWTYPE
+ IS
+    --
+    e_mca_inh         EXCEPTION;
+    l_t_valores       tron2000.trn_k_ptd.t_t_valores;
+    l_reg             ta999001%ROWTYPE;
+    --
+    CURSOR cl_ta999001
+    IS
+       --
+       SELECT a.*
+         FROM ta999001 a
+        WHERE a.cod_cia        =  p_cod_cia  
+          AND a.cod_pais       IN(p_cod_pais     , tron2000.dc_k_ptd.COD_PAIS_GEN     )
+          AND a.cod_estado     IN(p_cod_estado   , tron2000.dc_k_ptd.COD_ESTADO_GEN   )
+          AND a.cod_prov       IN(p_cod_prov     , tron2000.dc_k_ptd.COD_PROVINCIA_GEN)
+          AND a.cod_postal     IN(p_cod_postal   , tron2000.dc_k_ptd.COD_CODPOSTAL_GEN)
+          AND a.fec_validez    =  ( SELECT MAX(fec_validez)
+                                      FROM ta999001 b
+                                     WHERE b.cod_cia        = a.cod_cia  
+                                       AND b.cod_pais       = a.cod_pais
+                                       AND b.cod_estado     = a.cod_estado
+                                       AND b.cod_prov       = a.cod_prov  
+                                       AND b.cod_postal     = a.cod_postal
+                                       AND b.fec_validez   <= p_fec_validez
+                                   )
+       ORDER BY a.cod_pais, a.cod_estado, a.cod_prov , a.cod_postal;                            
+    --
+ BEGIN
+    --
+    OPEN        cl_ta999001;
+    FETCH       cl_ta999001 INTO l_reg;
+    g_existe := cl_ta999001 %FOUND;
+    CLOSE       cl_ta999001;
+    --
+    pp_comprueba_error;
+    --
+    IF l_reg.mca_inh = tron2000.trn_k_ptd.SI
+    THEN
+       --
+       RAISE e_mca_inh;
+       --
+    END IF;
+    --
+    RETURN l_reg;
+    --
+ EXCEPTION
+    WHEN e_mca_inh
+    THEN
+       --
+       tron2000.trn_k_ptd.p_gen_error(p_cod_idioma  => tron2000.trn_k_ptd.f_dev_cod_idioma,
+                                      p_cod_mensaje => 20020                              ,
+                                      p_t_valores   => l_t_valores                        ,
+                                      p_pre_mensaje => tron2000.trn_k_ptd.NULO            ,
+                                      p_pos_mensaje => '[TIPO POBLACION CH RIESGO]'       );
+       --
+ END f_lee_vigente;
+ --
+END em_k_ta999001;
+/
